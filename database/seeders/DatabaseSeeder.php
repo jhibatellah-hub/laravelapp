@@ -30,7 +30,7 @@ class DatabaseSeeder extends Seeder
         $admin = User::create([
             'name'     => 'Administrateur',
             'email'    => 'admin@medcabinet.ma',
-            'password' => Hash::make('password'),
+            'password' => Hash::make('admin123'),
             'role'     => 'admin',
             'phone'    => '+212600000001',
             'is_active'=> true,
@@ -126,8 +126,8 @@ class DatabaseSeeder extends Seeder
         }
 
         $this->command->info(' Base de données initialisée avec succès !');
-        $this->command->info('   Admin    : admin@medcabinet.ma / password');
-        $this->command->info('   Médecin  : medecin@medcabinet.ma / password');
-        $this->command->info('   Patient  : patient@medcabinet.ma / password');
+        $this->command->info('   Admin    : admin@medcabinet.ma / admin123');
+        $this->command->info('   Médecin  : medecin@medcabinet.ma / MEDCIN123');
+        $this->command->info('   Patient  : patient@medcabinet.ma / PATIENT123');
     }
 }
