@@ -113,12 +113,34 @@ class AppointmentController extends Controller
     public function update(Request $request, Appointment $appointment)
     {
         $validated = $request->validate([
-            'appointment_date' => 'sometimes|date',
-            'appointment_time' => 'sometimes|date_format:H:i',
-            'status'           => 'sometimes|in:pending,confirmed,cancelled,completed',
-            'notes'            => 'nullable|string|max:500',
+            'doctor_id'           => 'sometimes|exists:users,id',
+            'appointment_date'    => 'sometimes|date|after_or_equal:today',
+            'appointment_time'    => 'sometimes|date_format:H:i',
+            'status'              => 'sometimes|in:pending,confirmed,cancelled,completed',
+            'notes'               => 'nullable|string|max:500',
             'cancellation_reason' => 'nullable|string|max:500',
         ]);
+
+        // Modification zedtha hna: Vérifier les conflits si on change la date, l'heure ou le docteur
+        if (isset($validated['appointment_date']) || isset($validated['appointment_time']) || isset($validated['doctor_id'])) {
+            $date = $validated['appointment_date'] ?? $appointment->appointment_date;
+            $time = $validated['appointment_time'] ?? $appointment->appointment_time;
+            $doctorId = $validated['doctor_id'] ?? $appointment->doctor_id;
+
+            $conflict = Appointment::where('doctor_id', $doctorId)
+                ->whereDate('appointment_date', $date)
+                ->where('appointment_time', $time)
+                ->where('id', '!=', $appointment->id) // N7iydo l'rendez-vous l7ali bach maydirch conflit m3a rasso
+                ->whereNotIn('status', ['cancelled'])
+                ->exists();
+
+            if ($conflict) {
+                return response()->json([
+                    'message' => 'Ce créneau n\'est pas disponible.',
+                    'errors'  => ['appointment_time' => ['Ce créneau est déjà réservé par un autre patient.']],
+                ], 422);
+            }
+        }
 
         $appointment->update($validated);
 

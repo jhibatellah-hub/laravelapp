@@ -122,7 +122,7 @@
         <div class="section-title">
             <i class="fas fa-chart-bar"></i> {{ __('dashboard.last_7_days') }}
         </div>
-        @php $maxVal = max(array_column($chartData, 'count'), 1); @endphp
+            @php $maxVal = max(array_column($chartData, 'count')) ?: 1; @endphp
         <div class="chart-bar-wrap">
             @foreach($chartData as $day)
             <div class="chart-bar-col">

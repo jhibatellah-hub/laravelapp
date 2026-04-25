@@ -42,6 +42,10 @@ class User extends Authenticatable
     }
 
     // Scopes
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
     public function scopeDoctors($query)
     {
         return $query->where('role', 'doctor');

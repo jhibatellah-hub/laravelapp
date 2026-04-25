@@ -69,14 +69,8 @@ class AppointmentController extends Controller
             'notes'            => 'nullable|string|max:500',
         ]);
 
-        // Vérifier disponibilité
-        $conflict = Appointment::where('doctor_id', $validated['doctor_id'])
-            ->whereDate('appointment_date', $validated['appointment_date'])
-            ->where('appointment_time', $validated['appointment_time'])
-            ->whereNotIn('status', ['cancelled'])
-            ->exists();
-
-        if ($conflict) {
+        // Vérifier disponibilité (utilisation de la méthode refactorisée)
+        if ($this->checkConflict($validated['doctor_id'], $validated['appointment_date'], $validated['appointment_time'])) {
             return back()->withErrors(['appointment_time' => __('appointments.time_not_available')])->withInput();
         }
 
@@ -101,11 +95,25 @@ class AppointmentController extends Controller
             'patient_id'       => 'sometimes|exists:users,id',
             'doctor_id'        => 'sometimes|exists:users,id',
             'service_id'       => 'sometimes|exists:services,id',
-            'appointment_date' => 'sometimes|date',
+            'appointment_date' => 'sometimes|date|after_or_equal:today',
             'appointment_time' => 'sometimes|date_format:H:i',
             'status'           => 'sometimes|in:pending,confirmed,cancelled,completed',
             'notes'            => 'nullable|string|max:500',
         ]);
+
+        // Vérifier les conflits si on modifie la date, l'heure ou le médecin
+        if (isset($validated['appointment_date']) || isset($validated['appointment_time']) || isset($validated['doctor_id'])) {
+            $date = $validated['appointment_date'] ?? $appointment->appointment_date;
+            $time = $validated['appointment_time'] ?? $appointment->appointment_time;
+            $doctorId = $validated['doctor_id'] ?? $appointment->doctor_id;
+
+            if ($this->checkConflict($doctorId, $date, $time, $appointment->id)) {
+                if ($request->expectsJson()) {
+                    return response()->json(['success' => false, 'message' => __('appointments.time_not_available')], 422);
+                }
+                return back()->withErrors(['appointment_time' => __('appointments.time_not_available')])->withInput();
+            }
+        }
 
         $appointment->update($validated);
 
@@ -183,5 +191,22 @@ class AppointmentController extends Controller
             ]);
 
         return response()->json($appointments);
+    }
+
+    /**
+     * Fonction privée pour vérifier la disponibilité d'un créneau (Évite la répétition du code)
+     */
+    private function checkConflict($doctorId, $date, $time, $excludeAppointmentId = null)
+    {
+        $query = Appointment::where('doctor_id', $doctorId)
+            ->whereDate('appointment_date', $date)
+            ->where('appointment_time', $time)
+            ->whereNotIn('status', ['cancelled']);
+
+        if ($excludeAppointmentId) {
+            $query->where('id', '!=', $excludeAppointmentId);
+        }
+
+        return $query->exists();
     }
 }
