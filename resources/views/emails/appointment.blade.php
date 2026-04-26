@@ -24,7 +24,7 @@
             <p><strong>Notes :</strong> {{ $appointment->notes }}</p>
         @endif
 
-        <p>Merci pour votre confiance,<br><strong>L'équipe MedCabinet</strong></p>
+        <p>Merci pour votre confiance,<br><strong>L'équipe JamylCabinet</strong></p>
     </div>
 
 </body>

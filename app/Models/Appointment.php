@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Carbon\Carbon;
 
 class Appointment extends Model
 {
@@ -21,13 +22,14 @@ class Appointment extends Model
     {
         return [
             'appointment_date' => 'date',
+            'appointment_time' => 'datetime:H:i', 
             'confirmed_at'     => 'datetime',
             'cancelled_at'     => 'datetime',
             'email_sent'       => 'boolean',
         ];
     }
 
-    // Relations
+    // --- Relations ---
     public function patient()
     {
         return $this->belongsTo(User::class, 'patient_id');
@@ -43,7 +45,7 @@ class Appointment extends Model
         return $this->belongsTo(Service::class);
     }
 
-    // Scopes
+    // --- Scopes ---
     public function scopePending($query)
     {
         return $query->where('status', 'pending');
@@ -70,7 +72,26 @@ class Appointment extends Model
         return $query->where('patient_id', $patientId);
     }
 
-    // Helpers
+    /**
+     * ZEDT HADA: Scope bach n9elbou wach kayn conflit dyal l'wa9t.
+     * Daba f l'controller t9der dir: Appointment::conflicting($doctor, $date, $time)->exists();
+     */
+    public function scopeConflicting($query, $doctorId, $date, $time, $excludeId = null)
+    {
+        $query->where('doctor_id', $doctorId)
+              ->whereDate('appointment_date', $date)
+              // Kan9elbou 3la nafs l'waxt (awla t9der tzid logic dial chhal mof l'consultation)
+              ->whereTime('appointment_time', Carbon::parse($time)->format('H:i:s'))
+              ->whereNotIn('status', ['cancelled']);
+
+        if ($excludeId) {
+            $query->where('id', '!=', $excludeId);
+        }
+
+        return $query;
+    }
+
+    // --- Helpers (Accessors) ---
     public function getStatusLabelAttribute(): string
     {
         return match($this->status) {
@@ -78,7 +99,7 @@ class Appointment extends Model
             'confirmed' => __('appointments.status.confirmed'),
             'cancelled' => __('appointments.status.cancelled'),
             'completed' => __('appointments.status.completed'),
-            default     => $this->status,
+            default     => ucfirst($this->status), // Fallback mzyan
         };
     }
 
@@ -93,17 +114,34 @@ class Appointment extends Model
         };
     }
 
+    /**
+     * ZEDT HADA: Helper kaygolik wach l'rendez-vous daz waqto wla mzal (True/False)
+     * T9der tkhdem bih f Blade: @if($appointment->is_past) ... @endif
+     */
+    public function getIsPastAttribute(): bool
+    {
+        // Kan-jme3ou date w l'heure bach n-comparéwhom m3a l'wa9t d daba
+        $appointmentDateTime = Carbon::parse($this->appointment_date->format('Y-m-d') . ' ' . $this->appointment_time->format('H:i'));
+        return $appointmentDateTime->isPast();
+    }
+
+    // --- Actions ---
     public function confirm(): void
     {
-        $this->update(['status' => 'confirmed', 'confirmed_at' => now()]);
+        // Ta7sin sghir: mandirou update hta n-vérifiw wach machi déja confirmed
+        if ($this->status !== 'confirmed') {
+            $this->update(['status' => 'confirmed', 'confirmed_at' => now()]);
+        }
     }
 
     public function cancel(string $reason = null): void
     {
-        $this->update([
-            'status'              => 'cancelled',
-            'cancelled_at'        => now(),
-            'cancellation_reason' => $reason,
-        ]);
+        if ($this->status !== 'cancelled') {
+            $this->update([
+                'status'              => 'cancelled',
+                'cancelled_at'        => now(),
+                'cancellation_reason' => $reason,
+            ]);
+        }
     }
 }

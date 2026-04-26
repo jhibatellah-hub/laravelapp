@@ -3,8 +3,10 @@
 namespace App\Mail;
 
 use App\Models\Appointment;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Attachment; 
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
@@ -15,13 +17,11 @@ class AppointmentConfirmation extends Mailable
 
     public $appointment;
 
-    // L'constructeur kayched les informations dial RDV
     public function __construct(Appointment $appointment)
     {
         $this->appointment = $appointment;
     }
 
-    // L'objet (Subject) dial l'email
     public function envelope(): Envelope
     {
         return new Envelope(
@@ -29,16 +29,27 @@ class AppointmentConfirmation extends Mailable
         );
     }
 
-    // L'fichier Blade li fih le design dial l'email
     public function content(): Content
     {
         return new Content(
-            view: 'emails.appointment', // Gha ncreyiwha daba
+            view: 'emails.appointment', 
         );
     }
 
+    /**
+     * Hna fin drna l'modification bach n-attachiw l'PDF
+     */
     public function attachments(): array
     {
-        return [];
+        // 1. Kan-génériw l'PDF mn wahed l'fichier Blade jdid (ghadi ncreyiwh)
+        $pdf = Pdf::loadView('pdf.appointment_receipt', [
+            'appointment' => $this->appointment
+        ]);
+
+        // 2. Kan-les9ouh f l'email w nsemiwh 'Recu_Rendez_Vous.pdf'
+        return [
+            Attachment::fromData(fn () => $pdf->output(), 'Recu_Rendez_Vous.pdf')
+                      ->withMime('application/pdf'),
+        ];
     }
 }
