@@ -1,14 +1,3 @@
-@extends('layouts.app')
-
-@section('page-title', __('nav.dashboard'))
-@section('breadcrumb', __('app.welcome') . ', ' . auth()->user()->name)
-
-@section('topbar-actions')
-    <a href="{{ route('appointments.index') }}" class="btn btn-primary">
-        <i class="fas fa-plus"></i> {{ __('appointments.new') }}
-    </a>
-@endsection
-
 @section('content')
 <style>
 .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
@@ -40,59 +29,59 @@
 .chart-label { font-size: 10px; color: var(--text-muted); }
 </style>
 
-{{-- Stats --}}
-<div class="stats-grid">
-    <div class="stat-card">
-        <div class="stat-icon" style="background:var(--primary-lt)">
-            <i class="fas fa-calendar-alt" style="color:var(--primary-mid)"></i>
+{{-- Nwerriw hadchi GHIR l'Admin wla Tbib --}}
+@if(auth()->user()->isAdmin() || auth()->user()->isDoctor())
+    
+    {{-- Stats Globale --}}
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:var(--primary-lt)"><i class="fas fa-calendar-alt" style="color:var(--primary-mid)"></i></div>
+            <div class="stat-value">{{ $stats['total_appointments'] ?? 0 }}</div>
+            <div class="stat-label">{{ __('dashboard.total_appointments') }}</div>
         </div>
-        <div class="stat-value">{{ $stats['total_appointments'] }}</div>
-        <div class="stat-label">{{ __('dashboard.total_appointments') }}</div>
-        <div class="stat-trend" style="color:var(--success)">
-            <i class="fas fa-arrow-up"></i> {{ __('dashboard.this_month') }}
+        <div class="stat-card">
+            <div class="stat-icon" style="background:var(--warning-lt)"><i class="fas fa-clock" style="color:var(--warning)"></i></div>
+            <div class="stat-value">{{ $stats['pending_appointments'] ?? 0 }}</div>
+            <div class="stat-label">{{ __('dashboard.pending') }}</div>
         </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon" style="background:var(--warning-lt)">
-            <i class="fas fa-clock" style="color:var(--warning)"></i>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:var(--success-lt)"><i class="fas fa-check-circle" style="color:var(--success)"></i></div>
+            <div class="stat-value">{{ $stats['confirmed_appointments'] ?? 0 }}</div>
+            <div class="stat-label">{{ __('dashboard.confirmed') }}</div>
         </div>
-        <div class="stat-value">{{ $stats['pending_appointments'] }}</div>
-        <div class="stat-label">{{ __('dashboard.pending') }}</div>
-        <div class="stat-trend" style="color:var(--warning)">
-            <i class="fas fa-exclamation-circle"></i> {{ __('dashboard.to_confirm') }}
-        </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon" style="background:var(--success-lt)">
-            <i class="fas fa-check-circle" style="color:var(--success)"></i>
-        </div>
-        <div class="stat-value">{{ $stats['confirmed_appointments'] }}</div>
-        <div class="stat-label">{{ __('dashboard.confirmed') }}</div>
-        <div class="stat-trend" style="color:var(--success)">
-            <i class="fas fa-arrow-up"></i> {{ __('dashboard.good') }}
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#EAF3DE"><i class="fas fa-user-friends" style="color:var(--success)"></i></div>
+            <div class="stat-value">{{ $stats['total_patients'] ?? 0 }}</div>
+            <div class="stat-label">{{ __('dashboard.patients') }}</div>
         </div>
     </div>
-    <div class="stat-card">
-        <div class="stat-icon" style="background:#EAF3DE">
-            <i class="fas fa-user-friends" style="color:var(--success)"></i>
+
+@else
+    {{-- Stats dyal l'Patient --}}
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:var(--primary-lt)"><i class="fas fa-calendar-alt" style="color:var(--primary-mid)"></i></div>
+            <div class="stat-value">{{ $stats['my_total_appointments'] ?? 0 }}</div>
+            <div class="stat-label">Mes Rendez-vous</div>
         </div>
-        <div class="stat-value">{{ $stats['total_patients'] }}</div>
-        <div class="stat-label">{{ __('dashboard.patients') }}</div>
-        <div class="stat-trend" style="color:var(--success)">
-            <i class="fas fa-plus"></i> {{ __('dashboard.active') }}
+        <div class="stat-card">
+            <div class="stat-icon" style="background:var(--warning-lt)"><i class="fas fa-clock" style="color:var(--warning)"></i></div>
+            <div class="stat-value">{{ $stats['my_pending'] ?? 0 }}</div>
+            <div class="stat-label">En attente</div>
         </div>
     </div>
-</div>
+@endif
+
 
 <div class="two-cols">
-    {{-- Prochains RDV --}}
+    {{-- Prochains RDV (Kaybanou lkoulchi) --}}
     <div class="card">
         <div class="section-title">
             <i class="fas fa-calendar-day"></i> {{ __('dashboard.upcoming') }}
         </div>
         @forelse($upcomingAppointments as $rdv)
             <div class="rdv-item">
-                <div class="rdv-avatar">{{ $rdv->patient->initials }}</div>
+                <div class="rdv-avatar">{{ $rdv->patient->initials ?? substr($rdv->patient->name, 0, 2) }}</div>
                 <div class="rdv-info">
                     <div class="rdv-name">{{ $rdv->patient->name }}</div>
                     <div class="rdv-detail">
@@ -110,30 +99,28 @@
                 {{ __('dashboard.no_upcoming') }}
             </p>
         @endforelse
-        <div style="margin-top:14px">
-            <a href="{{ route('appointments.index') }}" class="btn btn-outline btn-sm">
-                {{ __('dashboard.see_all') }} <i class="fas fa-arrow-right"></i>
-            </a>
-        </div>
     </div>
 
-    {{-- Graphique 7 jours --}}
-    <div class="card">
-        <div class="section-title">
-            <i class="fas fa-chart-bar"></i> {{ __('dashboard.last_7_days') }}
-        </div>
-            @php $maxVal = max(array_column($chartData, 'count')) ?: 1; @endphp
-        <div class="chart-bar-wrap">
-            @foreach($chartData as $day)
-            <div class="chart-bar-col">
-                <div class="chart-bar" style="height:{{ max(($day['count'] / $maxVal) * 100, 5) }}%" title="{{ $day['count'] }} RDV"></div>
-                <span class="chart-label">{{ $day['date'] }}</span>
+    {{-- Graphique 7 jours (Kayban ghir l'Admin w Tbib) --}}
+    @if(auth()->user()->isAdmin() || auth()->user()->isDoctor())
+        <div class="card">
+            <div class="section-title">
+                <i class="fas fa-chart-bar"></i> {{ __('dashboard.last_7_days') }}
             </div>
-            @endforeach
+            @php 
+                $chartDataArray = $chartData ?? [];
+                $maxVal = count($chartDataArray) > 0 ? max(array_column($chartDataArray, 'count')) : 1; 
+                $maxVal = $maxVal ?: 1; // Bach man9esmouch 3la zero
+            @endphp
+            <div class="chart-bar-wrap">
+                @foreach($chartDataArray as $day)
+                <div class="chart-bar-col">
+                    <div class="chart-bar" style="height:{{ max(($day['count'] / $maxVal) * 100, 5) }}%" title="{{ $day['count'] }} RDV"></div>
+                    <span class="chart-label">{{ $day['date'] }}</span>
+                </div>
+                @endforeach
+            </div>
         </div>
-        <div style="margin-top:12px;font-size:12px;color:var(--text-muted);text-align:center">
-            {{ __('dashboard.appointments_per_day') }}
-        </div>
-    </div>
+    @endif
 </div>
 @endsection
