@@ -45,8 +45,8 @@
 </div>
 
 {{-- Date & Heure --}}
-<div class="form-row">
-    <div class="form-group">
+<div class="form-row" style="display: flex; gap: 15px;">
+    <div class="form-group" style="flex: 1;">
         <label class="form-label">{{ __('appointments.date') }} *</label>
         <input type="date" name="appointment_date" class="form-control" required
                min="{{ today()->toDateString() }}"
@@ -54,9 +54,11 @@
                id="{{ isset($appointment) ? 'edit_appointment_date' : 'appointment_date' }}">
         @error('appointment_date') <div class="form-error">{{ $message }}</div> @enderror
     </div>
-    <div class="form-group">
+    <div class="form-group" style="flex: 1;">
         <label class="form-label">{{ __('appointments.time') }} *</label>
+        {{-- Modification hna: Zedt min, max w step bach n-controler l'waqt (Malan: 08:00 l 18:00, b 15 minutes) --}}
         <input type="time" name="appointment_time" class="form-control" required
+               min="08:00" max="18:00" step="900"
                value="{{ old('appointment_time', $appointment?->appointment_time) }}"
                id="{{ isset($appointment) ? 'edit_appointment_time' : 'appointment_time' }}">
         @error('appointment_time') <div class="form-error">{{ $message }}</div> @enderror
@@ -64,8 +66,8 @@
 </div>
 
 {{-- Notes --}}
-<div class="form-group">
+<div class="form-group" style="margin-top: 15px;">
     <label class="form-label">{{ __('appointments.notes') }}</label>
-    <textarea name="notes" class="form-control" rows="2" placeholder="{{ __('appointments.notes_placeholder') }}"
+    <textarea name="notes" class="form-control" rows="3" placeholder="{{ __('appointments.notes_placeholder') }}"
               id="{{ isset($appointment) ? 'edit_notes' : 'notes' }}">{{ old('notes', $appointment?->notes) }}</textarea>
 </div>

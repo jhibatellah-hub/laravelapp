@@ -32,7 +32,7 @@
 {{-- Barre de filtres --}}
 <div class="filters-bar">
     <div class="search-wrap">
-        <i class="fas fa-search"></i>
+        <i class="fas fa-search" id="searchIcon"></i>
         <input type="text" id="searchInput" placeholder="{{ __('appointments.search_placeholder') }}" autocomplete="off">
     </div>
     <select class="filter-select" id="statusFilter">
@@ -65,16 +65,16 @@
             <tr data-id="{{ $rdv->id }}">
                 <td>
                     <div style="display:flex;align-items:center;gap:9px">
-                        <div class="avatar-sm" style="background:var(--primary-lt);color:var(--primary-mid)">{{ $rdv->patient->initials }}</div>
+                        <div class="avatar-sm" style="background:var(--primary-lt);color:var(--primary-mid)">{{ $rdv->patient->initials ?? substr($rdv->patient->name, 0, 2) }}</div>
                         <div>
                             <div style="font-weight:500">{{ $rdv->patient->name }}</div>
-                            <div style="font-size:11px;color:var(--text-muted)">{{ $rdv->patient->phone }}</div>
+                            <div style="font-size:11px;color:var(--text-muted)">{{ $rdv->patient->phone ?? '' }}</div>
                         </div>
                     </div>
                 </td>
                 <td>
                     <div style="font-weight:500">{{ $rdv->doctor->name }}</div>
-                    <div style="font-size:11px;color:var(--text-muted)">{{ $rdv->doctor->specialty }}</div>
+                    <div style="font-size:11px;color:var(--text-muted)">{{ $rdv->doctor->specialty ?? '' }}</div>
                 </td>
                 <td>{{ $rdv->appointment_date->format('d/m/Y') }}</td>
                 <td style="font-weight:500;color:var(--primary-mid)">{{ $rdv->appointment_time }}</td>
@@ -216,17 +216,23 @@ const searchInput  = document.getElementById('searchInput');
 const statusFilter = document.getElementById('statusFilter');
 const dateFilter   = document.getElementById('dateFilter');
 const resultCount  = document.getElementById('resultCount');
+const searchIcon   = document.getElementById('searchIcon');
 
 function doSearch() {
     const q      = searchInput.value.trim();
     const status = statusFilter.value;
     const date   = dateFilter.value;
 
+    // Loading Animation
+    searchIcon.className = 'fas fa-spinner fa-spin';
+
     axios.get('{{ route('appointments.search') }}', { params: { q, status, date } })
         .then(res => {
+            searchIcon.className = 'fas fa-search'; // Stop loading
             const rows = res.data;
             resultCount.textContent = `${rows.length} résultat(s)`;
             const tbody = document.getElementById('tableBody');
+            
             if (rows.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted)">
                     <i class="fas fa-search" style="font-size:24px;display:block;margin-bottom:8px;color:var(--border)"></i>
@@ -234,24 +240,47 @@ function doSearch() {
                 </td></tr>`;
                 return;
             }
-            tbody.innerHTML = rows.map(r => `
+
+            // Modification HNA: Qdit l'affichage dyal l'avatar w l'bouton "Modifier"
+            tbody.innerHTML = rows.map(r => {
+                // Generer chwiya dyal l'initials ila makanch
+                let initials = r.patient_name.substring(0, 2).toUpperCase();
+                
+                return `
                 <tr>
-                    <td><div style="font-weight:500">${r.patient_name}</div></td>
-                    <td>${r.doctor_name}</td>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:9px">
+                            <div class="avatar-sm" style="background:var(--primary-lt);color:var(--primary-mid)">${initials}</div>
+                            <div>
+                                <div style="font-weight:500">${r.patient_name}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div style="font-weight:500">${r.doctor_name}</div>
+                    </td>
                     <td>${r.appointment_date}</td>
                     <td style="font-weight:500;color:var(--primary-mid)">${r.appointment_time}</td>
                     <td>${r.service_name}</td>
                     <td><span class="badge badge-${statusColor(r.status)}">${r.status_label}</span></td>
-                    <td><div class="action-wrap">
-                        <button class="act-btn" title="Modifier"><i class="fas fa-pencil-alt"></i></button>
-                        <button class="act-btn del" onclick="openDeleteModal(${r.id}, '${r.patient_name}')" title="Annuler">
-                            <i class="fas fa-trash-alt"></i>
-                        </button>
-                    </div></td>
+                    <td>
+                        <div class="action-wrap">
+                            <button class="act-btn" onclick="openEditModal(${r.id}, '', '', '', '', '', '${r.status}', '')" title="Modifier">
+                                <i class="fas fa-pencil-alt"></i>
+                            </button>
+                            <button class="act-btn del" onclick="openDeleteModal(${r.id}, '${r.patient_name.replace(/'/g, "\\'")}')" title="Annuler">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </td>
                 </tr>
-            `).join('');
+                `;
+            }).join('');
         })
-        .catch(err => console.error('Search error:', err));
+        .catch(err => {
+            searchIcon.className = 'fas fa-search';
+            console.error('Search error:', err);
+        });
 }
 
 function statusColor(s) {

@@ -10,9 +10,11 @@ return new class extends Migration
     {
         Schema::create('appointments', function (Blueprint $table) {
             $table->id();
+            
             $table->foreignId('patient_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('doctor_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('service_id')->constrained('services')->onDelete('cascade');
+            $table->foreignId('doctor_id')->constrained('users')->onDelete('restrict');
+            $table->foreignId('service_id')->constrained('services')->onDelete('restrict');
+            
             $table->date('appointment_date');
             $table->time('appointment_time');
             $table->enum('status', ['pending', 'confirmed', 'cancelled', 'completed'])->default('pending');
@@ -25,7 +27,10 @@ return new class extends Migration
             $table->softDeletes();
 
             $table->index(['appointment_date', 'status']);
-            $table->index(['doctor_id', 'appointment_date']);
+            
+            $table->index(['doctor_id', 'appointment_date', 'appointment_time'], 'idx_doctor_date_time');
+            
+            $table->index('patient_id');
         });
     }
 
