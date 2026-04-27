@@ -8,12 +8,10 @@
         <i class="far fa-calendar"></i>
         {{ __('ui.today') }}
     </a>
-    @if(auth()->user()->isAdmin() || auth()->user()->isPatient())
-        <button type="button" @click="showAddModal = true" class="btn btn-primary">
-            <i class="fas fa-plus"></i>
-            {{ __('appointments.book') }}
-        </button>
-    @endif
+    <button type="button" @click="showAddModal = true" class="btn btn-primary">
+        <i class="fas fa-plus"></i>
+        {{ __('appointments.book') }}
+    </button>
 @endsection
 
 @section('content')
@@ -208,76 +206,79 @@
         </div>
     </div>
 
-    @if(auth()->user()->isAdmin() || auth()->user()->isPatient())
-        <div x-show="showAddModal" x-cloak class="modal-backdrop">
-            <div class="modal-panel" @click.away="showAddModal = false">
-                <div class="panel-heading">
-                    <div>
-                        <div class="modal-title">{{ __('appointments.create_title') }}</div>
-                        <div class="modal-copy">{{ __('appointments.subtitle') }}</div>
-                    </div>
-                    <button type="button" class="icon-btn" @click="showAddModal = false"><i class="fas fa-xmark"></i></button>
+    <div x-show="showAddModal" x-cloak class="modal-backdrop">
+        <div class="modal-panel" @click.away="showAddModal = false">
+            <div class="panel-heading">
+                <div>
+                    <div class="modal-title">{{ __('appointments.create_title') }}</div>
+                    <div class="modal-copy">{{ __('appointments.subtitle') }}</div>
                 </div>
+                <button type="button" class="icon-btn" @click="showAddModal = false"><i class="fas fa-xmark"></i></button>
+            </div>
 
-                <form action="{{ route('appointments.store') }}" method="POST" class="form-grid">
-                    @csrf
+            <form action="{{ route('appointments.store') }}" method="POST" class="form-grid">
+                @csrf
 
-                    @if(!auth()->user()->isPatient())
-                        <div>
-                            <label class="field-label">{{ __('appointments.patient') }}</label>
-                            <select name="patient_id" class="field-select" required>
-                                @foreach($patients as $patient)
-                                    <option value="{{ $patient->id }}">{{ $patient->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    @else
-                        <input type="hidden" name="patient_id" value="{{ auth()->id() }}">
-                    @endif
+                @if(auth()->user()->isAdmin() || auth()->user()->isDoctor())
+                    <div>
+                        <label class="field-label">{{ __('appointments.patient') }}</label>
+                        <select name="patient_id" class="field-select" required>
+                            @foreach($patients as $patient)
+                                <option value="{{ $patient->id }}">{{ $patient->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                @else
+                    <input type="hidden" name="patient_id" value="{{ auth()->id() }}">
+                @endif
 
-                    <div class="form-grid two">
-                        <div>
-                            <label class="field-label">{{ __('appointments.doctor') }}</label>
+                <div class="form-grid two">
+                    <div>
+                        <label class="field-label">{{ __('appointments.doctor') }}</label>
+                        @if(auth()->user()->isDoctor())
+                            <input type="hidden" name="doctor_id" value="{{ auth()->id() }}">
+                            <input type="text" class="field-control" value="{{ auth()->user()->name }}" readonly>
+                        @else
                             <select name="doctor_id" class="field-select" required>
                                 @foreach($doctors as $doctor)
                                     <option value="{{ $doctor->id }}">{{ $doctor->name }}</option>
                                 @endforeach
                             </select>
-                        </div>
-                        <div>
-                            <label class="field-label">{{ __('appointments.service') }}</label>
-                            <select name="service_id" class="field-select" required>
-                                @foreach($services as $service)
-                                    <option value="{{ $service->id }}">{{ $service->name }} ({{ $service->price }} {{ __('appointments.price_suffix') }})</option>
-                                @endforeach
-                            </select>
-                        </div>
+                        @endif
                     </div>
-
-                    <div class="form-grid two">
-                        <div>
-                            <label class="field-label">{{ __('appointments.date') }}</label>
-                            <input type="date" name="appointment_date" class="field-control" min="{{ now()->toDateString() }}" value="{{ request('date', now()->toDateString()) }}" required>
-                        </div>
-                        <div>
-                            <label class="field-label">{{ __('appointments.time') }}</label>
-                            <input type="time" name="appointment_time" class="field-control" required>
-                        </div>
-                    </div>
-
                     <div>
-                        <label class="field-label">{{ __('appointments.notes') }}</label>
-                        <textarea name="notes" class="field-textarea"></textarea>
+                        <label class="field-label">{{ __('appointments.service') }}</label>
+                        <select name="service_id" class="field-select" required>
+                            @foreach($services as $service)
+                                <option value="{{ $service->id }}">{{ $service->name }} ({{ $service->price }} {{ __('appointments.price_suffix') }})</option>
+                            @endforeach
+                        </select>
                     </div>
+                </div>
 
-                    <div class="modal-actions">
-                        <button type="button" class="btn btn-secondary" @click="showAddModal = false">{{ __('appointments.cancel') }}</button>
-                        <button type="submit" class="btn btn-primary">{{ __('appointments.save') }}</button>
+                <div class="form-grid two">
+                    <div>
+                        <label class="field-label">{{ __('appointments.date') }}</label>
+                        <input type="date" name="appointment_date" class="field-control" min="{{ now()->toDateString() }}" value="{{ request('date', now()->toDateString()) }}" required>
                     </div>
-                </form>
-            </div>
+                    <div>
+                        <label class="field-label">{{ __('appointments.time') }}</label>
+                        <input type="time" name="appointment_time" class="field-control" required>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="field-label">{{ __('appointments.notes') }}</label>
+                    <textarea name="notes" class="field-textarea"></textarea>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" @click="showAddModal = false">{{ __('appointments.cancel') }}</button>
+                    <button type="submit" class="btn btn-primary">{{ __('appointments.save') }}</button>
+                </div>
+            </form>
         </div>
-    @endif
+    </div>
 
     <div x-show="showEditModal" x-cloak class="modal-backdrop">
         <div class="modal-panel" @click.away="showEditModal = false">

@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\Rule;
 // Ila mazal masawbtich l'mail, ghanhbtouha f try catch bla matdir l'erreur
 
 class AppointmentController extends Controller
@@ -69,17 +70,43 @@ class AppointmentController extends Controller
 
     public function store(Request $request)
     {
-        // Validation dartha hna bach maykhrjch lik erreur dyal FormRequest
-        $validated = $request->validate([
-            'patient_id' => 'required|exists:users,id',
-            'doctor_id' => 'required|exists:users,id',
-            'service_id' => 'required|exists:services,id',
+        $user = Auth::user();
+
+        $rules = [
+            'service_id' => ['required', Rule::exists('services', 'id')->where('is_active', true)],
             'appointment_date' => 'required|date|after_or_equal:today',
             'appointment_time' => 'required',
             'notes' => 'nullable|string',
-        ]);
+        ];
 
-        $service = Service::find($validated['service_id']);
+        if ($user->isPatient()) {
+            $rules['doctor_id'] = ['required', Rule::exists('users', 'id')->where(fn ($query) => $query
+                ->where('role', 'doctor')
+                ->where('is_active', true))];
+        } elseif ($user->isDoctor()) {
+            $rules['patient_id'] = ['required', Rule::exists('users', 'id')->where(fn ($query) => $query
+                ->where('role', 'patient')
+                ->where('is_active', true))];
+        } else {
+            $rules['patient_id'] = ['required', Rule::exists('users', 'id')->where(fn ($query) => $query
+                ->where('role', 'patient')
+                ->where('is_active', true))];
+            $rules['doctor_id'] = ['required', Rule::exists('users', 'id')->where(fn ($query) => $query
+                ->where('role', 'doctor')
+                ->where('is_active', true))];
+        }
+
+        $validated = $request->validate($rules);
+
+        if ($user->isPatient()) {
+            $validated['patient_id'] = $user->id;
+        }
+
+        if ($user->isDoctor()) {
+            $validated['doctor_id'] = $user->id;
+        }
+
+        $service = Service::findOrFail($validated['service_id']);
 
         if ($this->checkConflict(
             $validated['doctor_id'], 
