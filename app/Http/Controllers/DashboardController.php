@@ -13,7 +13,6 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
 
-        // 1. Les 5 prochains rendez-vous
         $upcomingQuery = Appointment::with(['patient', 'doctor', 'service'])
             ->upcoming()
             ->orderBy('appointment_date')
@@ -30,10 +29,8 @@ class DashboardController extends Controller
         $stats = [];
         $chartData = [];
 
-        // 2. Séparation dyal l'Affichage (Admin/Tbib vs Patient)
         if ($user->isAdmin() || $user->isDoctor()) {
             
-            // Stats globales
             $stats = [
                 'total_appointments'     => Appointment::count(),
                 'pending_appointments'   => Appointment::pending()->count(),
@@ -41,7 +38,6 @@ class DashboardController extends Controller
                 'total_patients'         => User::patients()->count(),
             ];
 
-            // Graphique optimisé
             $last7Days = now()->subDays(6)->startOfDay();
             $appointmentsLast7Days = Appointment::where('appointment_date', '>=', $last7Days)
                 ->get()
@@ -57,7 +53,6 @@ class DashboardController extends Controller
             }
 
         } else {
-            // Stats dyal l'Patient
             $stats = [
                 'my_total_appointments' => Appointment::forPatient($user->id)->count(),
                 'my_pending'            => Appointment::forPatient($user->id)->pending()->count(),
@@ -70,7 +65,6 @@ class DashboardController extends Controller
 
     public function setLocale(string $locale)
     {
-        // Khllina ghir l'Français w l'Anglais
         if (in_array($locale, ['fr', 'en'])) {
             session(['locale' => $locale]);
             

@@ -10,8 +10,12 @@ class Service extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name', 'name_ar', 'description',
-        'duration_minutes', 'price', 'color', 'is_active',
+        'name', 
+        'description',
+        'duration_minutes', 
+        'price', 
+        'color', 
+        'is_active',
     ];
 
     protected function casts(): array
@@ -32,9 +36,4 @@ class Service extends Model
         return $query->where('is_active', true);
     }
 
-    public function getLocalizedNameAttribute(): string
-    {
-        $locale = app()->getLocale();
-        return ($locale === 'ar' && $this->name_ar) ? $this->name_ar : $this->name;
-    }
-}
+   

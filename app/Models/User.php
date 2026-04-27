@@ -39,7 +39,6 @@ class User extends Authenticatable
         ];
     }
 
-    // Relations
     public function appointmentsAsPatient()
     {
         return $this->hasMany(Appointment::class, 'patient_id');
@@ -50,7 +49,6 @@ class User extends Authenticatable
         return $this->hasMany(Appointment::class, 'doctor_id');
     }
 
-    // Scopes
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
@@ -66,7 +64,7 @@ class User extends Authenticatable
         return $query->where('role', 'patient');
     }
 
-    // Helpers
+
     public function isAdmin(): bool
     {
         return $this->role === 'admin';

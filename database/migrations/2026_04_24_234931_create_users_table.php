@@ -16,9 +16,9 @@ return new class extends Migration
     $table->string('password');
     $table->enum('role', ['admin', 'doctor', 'patient'])->default('patient');
     $table->string('phone')->nullable();
-    $table->string('specialty')->nullable(); // ⬅️ ZEDT HADI (Doctor only)
+    $table->string('specialty')->nullable(); 
     $table->date('birth_date')->nullable();
-    $table->string('locale', 5)->default('fr'); // ⬅️ ZEDT HADI
+    $table->string('locale', 5)->default('fr'); 
     $table->boolean('is_active')->default(true);
     $table->rememberToken();
     $table->timestamps();
