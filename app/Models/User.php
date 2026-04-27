@@ -35,7 +35,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'birth_date' => 'date',
             'is_active' => 'boolean',
-            'locale' => 'string', // ⬅️ ZEDT
+            'locale' => 'string', 
         ];
     }
 

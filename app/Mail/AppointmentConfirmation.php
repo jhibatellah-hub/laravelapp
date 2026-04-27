@@ -25,23 +25,25 @@ class AppointmentConfirmation extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Confirmation de votre rendez-vous - MedCabinet',
+            // 1. Beddelna MedCabinet b JamylCabinet
+            subject: 'Confirmation de votre rendez-vous — JamylCabinet',
         );
     }
 
     public function content(): Content
     {
         return new Content(
-            view: 'emails.appointment', 
+            // 2. Beddelna smeyat l'view bash tqra l'fichier li sawbna f l'message li fat
+            view: 'emails.appointment-confirmation', 
         );
     }
 
     /**
-     * Hna fin drna l'modification bach n-attachiw l'PDF
+     * Hna fin drna l'modification bach n-attachiw l'PDF (Khlliha raha s7i7a 100%)
      */
     public function attachments(): array
     {
-        // 1. Kan-génériw l'PDF mn wahed l'fichier Blade jdid (ghadi ncreyiwh)
+        // 1. Kan-génériw l'PDF mn wahed l'fichier Blade jdid
         $pdf = Pdf::loadView('pdf.appointment_receipt', [
             'appointment' => $this->appointment
         ]);

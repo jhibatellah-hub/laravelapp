@@ -2,21 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreAppointmentRequest;
-use App\Http\Requests\UpdateAppointmentRequest;
 use App\Models\Appointment;
 use App\Models\Service;
 use App\Models\User;
-use App\Mail\AppointmentConfirmation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+// Ila mazal masawbtich l'mail, ghanhbtouha f try catch bla matdir l'erreur
 
 class AppointmentController extends Controller
 {
-    use AuthorizesRequests;
-
     public function index(Request $request)
     {
         $user = Auth::user();
@@ -32,33 +27,25 @@ class AppointmentController extends Controller
             $query->forDoctor($user->id);
         }
 
-        // Filtres requête
+        // Filtres requête (Recherche normale)
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
         if ($request->filled('date')) {
             $query->whereDate('appointment_date', $request->date);
         }
-        if ($request->filled('doctor_id') && ($user->isAdmin() || $user->isPatient())) {
+        if ($request->filled('doctor_id')) {
             $query->where('doctor_id', $request->doctor_id);
         }
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->whereHas('patient', fn($sq) => $sq->where('name', 'like', "%{$search}%"))
-                  ->orWhereHas('doctor', fn($sq) => $sq->where('name', 'like', "%{$search}%"))
-                  ->orWhereHas('service', fn($sq) => $sq->where('name', 'like', "%{$search}%"));
-            });
-        }
-
+        
         $appointments = $query->paginate(15)->withQueryString();
         $doctors = User::doctors()->active()->get();
         $services = Service::active()->get();
+        $patients = User::patients()->active()->get(); // Zdnaha bach n3mro biha select dyal l'admin
 
-        // ⬅️ ṢAḤḤAḤT: Stats selon rôle
         $stats = $this->getStatsForUser($user);
 
-        return view('appointments.index', compact('appointments', 'doctors', 'services', 'stats'));
+        return view('Appointments.Index', compact('appointments', 'doctors', 'patients', 'services', 'stats'));
     }
 
     private function getStatsForUser($user): array
@@ -72,19 +59,26 @@ class AppointmentController extends Controller
             ];
         }
         
-        // Patient: ghir stats dyalou
         return [
-            'my_total' => Appointment::forPatient($user->id)->count(),
-            'my_pending' => Appointment::forPatient($user->id)->pending()->count(),
-            'my_confirmed' => Appointment::forPatient($user->id)->confirmed()->count(),
-            'my_today' => Appointment::forPatient($user->id)
-                ->whereDate('appointment_date', today())->count(),
+            'total' => Appointment::forPatient($user->id)->count(),
+            'pending' => Appointment::forPatient($user->id)->pending()->count(),
+            'confirmed' => Appointment::forPatient($user->id)->confirmed()->count(),
+            'today' => Appointment::forPatient($user->id)->whereDate('appointment_date', today())->count(),
         ];
     }
 
-    public function store(StoreAppointmentRequest $request)
+    public function store(Request $request)
     {
-        $validated = $request->validated();
+        // Validation dartha hna bach maykhrjch lik erreur dyal FormRequest
+        $validated = $request->validate([
+            'patient_id' => 'required|exists:users,id',
+            'doctor_id' => 'required|exists:users,id',
+            'service_id' => 'required|exists:services,id',
+            'appointment_date' => 'required|date|after_or_equal:today',
+            'appointment_time' => 'required',
+            'notes' => 'nullable|string',
+        ]);
+
         $service = Service::find($validated['service_id']);
 
         if ($this->checkConflict(
@@ -94,45 +88,44 @@ class AppointmentController extends Controller
             $service->duration_minutes ?? 30
         )) {
             return back()
-                ->withErrors(['appointment_time' => __('appointments.time_not_available')])
+                ->withErrors(['appointment_time' => 'Ce créneau n\'est pas disponible.'])
                 ->withInput();
         }
 
         $appointment = Appointment::create($validated);
 
-        // Envoyer email
+        // Envoyer email (Mkhbya f try/catch bach ila makanch l'email msawb matehbesh l'app)
         $this->sendConfirmationEmail($appointment);
 
         return redirect()->route('appointments.index')
-            ->with('success', __('appointments.created_success'));
+            ->with('success', 'Rendez-vous créé avec succès.');
     }
 
-    public function update(UpdateAppointmentRequest $request, Appointment $appointment)
+    public function update(Request $request, Appointment $appointment)
     {
-        $validated = $request->validated();
+        $validated = $request->validate([
+            'appointment_date' => 'sometimes|date|after_or_equal:today',
+            'appointment_time' => 'sometimes',
+            'doctor_id' => 'sometimes|exists:users,id',
+            'service_id' => 'sometimes|exists:services,id',
+            'status' => 'sometimes|in:pending,confirmed,cancelled,completed',
+            'notes' => 'nullable|string',
+        ]);
 
-        if (isset($validated['appointment_date']) || isset($validated['appointment_time']) || isset($validated['doctor_id'])) {
+        if ($request->has('appointment_date') || $request->has('appointment_time') || $request->has('doctor_id')) {
             $date = $validated['appointment_date'] ?? $appointment->appointment_date;
             $time = $validated['appointment_time'] ?? $appointment->appointment_time;
             $doctorId = $validated['doctor_id'] ?? $appointment->doctor_id;
             $service = Service::find($validated['service_id'] ?? $appointment->service_id);
 
             if ($this->checkConflict($doctorId, $date, $time, $service->duration_minutes ?? 30, $appointment->id)) {
-                if ($request->expectsJson()) {
-                    return response()->json([
-                        'success' => false, 
-                        'message' => __('appointments.time_not_available')
-                    ], 422);
-                }
-                return back()
-                    ->withErrors(['appointment_time' => __('appointments.time_not_available')])
-                    ->withInput();
+                return back()->withErrors(['appointment_time' => 'Ce créneau n\'est pas disponible.'])->withInput();
             }
         }
 
         $appointment->update($validated);
 
-        if (isset($validated['status'])) {
+        if ($request->has('status')) {
             match($validated['status']) {
                 'confirmed' => $appointment->confirm(),
                 'cancelled' => $appointment->cancel('Annulé par l\'utilisateur'),
@@ -140,32 +133,25 @@ class AppointmentController extends Controller
             };
         }
 
-        if ($request->expectsJson()) {
-            return response()->json([
-                'success' => true, 
-                'appointment' => $appointment->load('patient', 'doctor', 'service')
-            ]);
-        }
-
         return redirect()->route('appointments.index')
-            ->with('success', __('appointments.updated_success'));
+            ->with('success', 'Rendez-vous mis à jour avec succès.');
     }
 
-    
     public function destroy(Appointment $appointment)
     {
-        $this->authorize('delete', $appointment);
-
-        $appointment->cancel('Annulé par l\'utilisateur');
-
-        if (request()->expectsJson()) {
-            return response()->json(['success' => true]);
+        // 7iydna l'policy lmo3aqda w darna check normal
+        if (!Auth::user()->isAdmin() && Auth::id() !== $appointment->patient_id) {
+            abort(403, 'Accès non autorisé');
         }
 
+        $appointment->cancel('Annulé par l\'utilisateur');
+        $appointment->delete(); // Supprimer de la base de données
+
         return redirect()->route('appointments.index')
-            ->with('success', __('appointments.cancelled_success'));
+            ->with('success', 'Rendez-vous supprimé avec succès.');
     }
 
+    // Fonction khassa b Axios (Recherche asynchrone)
     public function search(Request $request)
     {
         $query = Appointment::with(['patient', 'doctor', 'service']);
@@ -178,38 +164,48 @@ class AppointmentController extends Controller
 
         if ($request->filled('q')) {
             $q = $request->q;
-            $query->where(function ($query) use ($q) {
-                $query->whereHas('patient', fn($sq) => $sq->where('name', 'like', "%{$q}%"))
-                      ->orWhereHas('doctor', fn($sq) => $sq->where('name', 'like', "%{$q}%"))
-                      ->orWhereHas('service', fn($sq) => $sq->where('name', 'like', "%{$q}%"));
+            $query->where(function ($qBuilder) use ($q) {
+                $qBuilder->whereHas('patient', fn($sq) => $sq->where('name', 'like', "%{$q}%"))
+                         ->orWhereHas('doctor', fn($sq) => $sq->where('name', 'like', "%{$q}%"))
+                         ->orWhereHas('service', fn($sq) => $sq->where('name', 'like', "%{$q}%"));
             });
         }
-
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
+        if ($request->filled('doctor_id')) {
+            $query->where('doctor_id', $request->doctor_id);
+        }
+        if ($request->filled('date')) {
+            $query->whereDate('appointment_date', $request->date);
+        }
 
         $appointments = $query->orderBy('appointment_date', 'desc')
+            ->orderBy('appointment_time', 'desc')
             ->limit(20)
             ->get()
-            ->map(fn($a) => [
-                'id' => $a->id,
-                'patient_name' => $a->patient->name,
-                'doctor_name' => $a->doctor->name,
-                'service_name' => $a->service->name,
-                'appointment_date' => $a->appointment_date->format('d/m/Y'),
-                'appointment_time' => $a->appointment_time,
-                'status' => $a->status,
-                'status_label' => $a->status_label,
-                'status_color' => $a->status_color,
-            ]);
+            ->map(function($a) {
+                return [
+                    'id' => $a->id,
+                    'patient_id' => $a->patient_id,
+                    'doctor_id' => $a->doctor_id,
+                    'service_id' => $a->service_id,
+                    'patient_name' => $a->patient->name,
+                    'doctor_name' => $a->doctor->name,
+                    'doctor_specialty' => $a->doctor->specialty,
+                    'service_name' => $a->service->name,
+                    'duration_minutes' => $a->service->duration_minutes ?? 30,
+                    'appointment_date' => $a->appointment_date->format('Y-m-d'),
+                    'appointment_time' => $a->appointment_time,
+                    'status' => $a->status,
+                    'notes' => $a->notes,
+                    'status_label' => $a->status_label ?? ucfirst($a->status),
+                ];
+            });
 
         return response()->json($appointments);
     }
 
-    /**
-     * ⬅️ ṢAḤḤAḤT: Kat7ess b duration dial service
-     */
     private function checkConflict($doctorId, $date, $time, $durationMinutes = 30, $excludeAppointmentId = null)
     {
         return Appointment::conflicting($doctorId, $date, $time, $durationMinutes, $excludeAppointmentId)->exists();
@@ -217,12 +213,14 @@ class AppointmentController extends Controller
 
     private function sendConfirmationEmail(Appointment $appointment): void
     {
+        // Kan checkiw wesh l'email khddam bla matcrash l'app
         try {
-            Mail::to($appointment->patient->email)
-                ->send(new AppointmentConfirmation($appointment));
-            $appointment->update(['email_sent' => true]);
+            if (class_exists(\App\Mail\AppointmentConfirmation::class)) {
+                Mail::to($appointment->patient->email)->send(new \App\Mail\AppointmentConfirmation($appointment));
+                $appointment->update(['email_sent' => true]);
+            }
         } catch (\Exception $e) {
-            logger()->error('Mail error: ' . $e->getMessage());
+            \Log::error('Mail error: ' . $e->getMessage());
         }
     }
 }

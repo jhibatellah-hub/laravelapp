@@ -30,7 +30,7 @@ class DatabaseSeeder extends Seeder
         $admin = User::create([
             'name' => 'Administrateur',
             'email' => 'admin@medcabinet.ma',
-            'password' => Hash::make('Admin@2024!Secure'), // ⬅️ Password 9awi
+            'password' => Hash::make('Admin@2024'), 
             'role' => 'admin',
             'phone' => '+212600000001',
             'is_active' => true,

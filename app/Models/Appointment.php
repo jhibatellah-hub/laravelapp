@@ -141,7 +141,7 @@ class Appointment extends Model
         }
     }
 
-    public function cancel(string $reason = null): void
+    public function cancel(?string $reason = null): void
     {
         if ($this->status !== 'cancelled') {
             $this->update([

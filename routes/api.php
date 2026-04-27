@@ -10,7 +10,13 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:sanctum')->group(function () {
     
     // Rendez-vous CRUD
-    Route::apiResource('appointments', AppointmentController::class);
+    Route::apiResource('appointments', AppointmentController::class)->names([
+        'index' => 'api.appointments.index',
+        'store' => 'api.appointments.store',
+        'show' => 'api.appointments.show',
+        'update' => 'api.appointments.update',
+        'destroy' => 'api.appointments.destroy',
+    ]);
     
     // Patients
     Route::get('/patients', function () {

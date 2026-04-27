@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Mail\AppointmentConfirmation;
 use App\Models\Appointment;
+use App\Models\Service;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 
@@ -12,11 +13,20 @@ class AppointmentController extends Controller
 {
     /**
      * GET /api/appointments
-     * Liste les rendez-vous avec filtres et pagination
+     * Liste les rendez-vous avec filtres et sécurité des rôles
      */
     public function index(Request $request)
     {
+        $user = $request->user(); // Njibou l'user li m-connecté f l'API (Sanctum)
+        
         $query = Appointment::with(['patient:id,name,email,phone', 'doctor:id,name,specialty', 'service']);
+
+        //  SÉCURITÉ DES RÔLES : Kol wahed kixof ghir dyalo
+        if ($user->isPatient()) {
+            $query->forPatient($user->id);
+        } elseif ($user->isDoctor()) {
+            $query->forDoctor($user->id);
+        }
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -24,10 +34,8 @@ class AppointmentController extends Controller
         if ($request->filled('date')) {
             $query->whereDate('appointment_date', $request->date);
         }
-        if ($request->filled('doctor_id')) {
-            $query->where('doctor_id', $request->doctor_id);
-        }
-        if ($request->filled('patient_id')) {
+        // L'Admin w tbib homa li yqadrou y-filtriw b patient_id
+        if ($request->filled('patient_id') && !$user->isPatient()) {
             $query->where('patient_id', $request->patient_id);
         }
 
@@ -40,9 +48,9 @@ class AppointmentController extends Controller
             'data' => $appointments->items(),
             'meta' => [
                 'current_page' => $appointments->currentPage(),
-                'last_page' => $appointments->lastPage(),
-                'per_page' => $appointments->perPage(),
-                'total' => $appointments->total(),
+                'last_page'    => $appointments->lastPage(),
+                'per_page'     => $appointments->perPage(),
+                'total'        => $appointments->total(),
             ],
         ]);
     }
@@ -53,25 +61,36 @@ class AppointmentController extends Controller
      */
     public function store(Request $request)
     {
+        $user = $request->user();
+
         $validated = $request->validate([
-            'patient_id' => 'required|exists:users,id',
-            'doctor_id' => 'required|exists:users,id',
-            'service_id' => 'required|exists:services,id',
+            'patient_id'       => 'required|exists:users,id',
+            'doctor_id'        => 'required|exists:users,id',
+            'service_id'       => 'required|exists:services,id',
             'appointment_date' => 'required|date|after_or_equal:today',
             'appointment_time' => 'required|date_format:H:i',
-            'notes' => 'nullable|string|max:500',
+            'notes'            => 'nullable|string|max:500',
         ]);
 
-        $conflict = Appointment::where('doctor_id', $validated['doctor_id'])
-            ->whereDate('appointment_date', $validated['appointment_date'])
-            ->where('appointment_time', $validated['appointment_time'])
-            ->whereNotIn('status', ['cancelled'])
-            ->exists();
+        // Forcer l'ID dyal l'Patient bach may-reserverch b smyat chi wahed akhor
+        if ($user->isPatient()) {
+            $validated['patient_id'] = $user->id;
+        }
+
+        $service = Service::find($validated['service_id']);
+        
+        // Kheddemna scope `conflicting` li f l'Model w 7sebna l'weqt dyal l'service
+        $conflict = Appointment::conflicting(
+            $validated['doctor_id'], 
+            $validated['appointment_date'], 
+            $validated['appointment_time'],
+            $service->duration_minutes ?? 30
+        )->exists();
 
         if ($conflict) {
             return response()->json([
-                'message' => 'Ce creneau n\'est pas disponible.',
-                'errors' => ['appointment_time' => ['Ce creneau est deja reserve.']],
+                'message' => 'Ce créneau n\'est pas disponible.',
+                'errors'  => ['appointment_time' => ['Ce créneau est déjà réservé.']],
             ], 422);
         }
 
@@ -87,8 +106,8 @@ class AppointmentController extends Controller
         }
 
         return response()->json([
-            'message' => 'Rendez-vous cree avec succes.',
-            'data' => $appointment,
+            'message' => 'Rendez-vous créé avec succès.',
+            'data'    => $appointment,
         ], 201);
     }
 
@@ -96,8 +115,15 @@ class AppointmentController extends Controller
      * GET /api/appointments/{id}
      * Detail d'un rendez-vous
      */
-    public function show(Appointment $appointment)
+    public function show(Request $request, Appointment $appointment)
     {
+        $user = $request->user();
+
+        // SÉCURITÉ : L'patient yqder yshouf ghir RDV dyalo
+        if ($user->isPatient() && $appointment->patient_id !== $user->id) {
+            return response()->json(['message' => 'Accès non autorisé.'], 403);
+        }
+
         return response()->json([
             'data' => $appointment->load(['patient', 'doctor', 'service']),
         ]);
@@ -109,12 +135,20 @@ class AppointmentController extends Controller
      */
     public function update(Request $request, Appointment $appointment)
     {
+        $user = $request->user();
+
+        // SÉCURITÉ
+        if ($user->isPatient() && $appointment->patient_id !== $user->id) {
+            return response()->json(['message' => 'Accès non autorisé.'], 403);
+        }
+
         $validated = $request->validate([
-            'doctor_id' => 'sometimes|exists:users,id',
-            'appointment_date' => 'sometimes|date|after_or_equal:today',
-            'appointment_time' => 'sometimes|date_format:H:i',
-            'status' => 'sometimes|in:pending,confirmed,cancelled,completed',
-            'notes' => 'nullable|string|max:500',
+            'doctor_id'           => 'sometimes|exists:users,id',
+            'service_id'          => 'sometimes|exists:services,id',
+            'appointment_date'    => 'sometimes|date|after_or_equal:today',
+            'appointment_time'    => 'sometimes|date_format:H:i',
+            'status'              => 'sometimes|in:pending,confirmed,cancelled,completed',
+            'notes'               => 'nullable|string|max:500',
             'cancellation_reason' => 'nullable|string|max:500',
         ]);
 
@@ -122,18 +156,15 @@ class AppointmentController extends Controller
             $date = $validated['appointment_date'] ?? $appointment->appointment_date;
             $time = $validated['appointment_time'] ?? $appointment->appointment_time;
             $doctorId = $validated['doctor_id'] ?? $appointment->doctor_id;
+            $service = Service::find($validated['service_id'] ?? $appointment->service_id);
 
-            $conflict = Appointment::where('doctor_id', $doctorId)
-                ->whereDate('appointment_date', $date)
-                ->where('appointment_time', $time)
-                ->where('id', '!=', $appointment->id)
-                ->whereNotIn('status', ['cancelled'])
-                ->exists();
+            // Kheddemna scope `conflicting`
+            $conflict = Appointment::conflicting($doctorId, $date, $time, $service->duration_minutes ?? 30, $appointment->id)->exists();
 
             if ($conflict) {
                 return response()->json([
-                    'message' => 'Ce creneau n\'est pas disponible.',
-                    'errors' => ['appointment_time' => ['Ce creneau est deja reserve par un autre patient.']],
+                    'message' => 'Ce créneau n\'est pas disponible.',
+                    'errors'  => ['appointment_time' => ['Ce créneau est déjà réservé par un autre patient.']],
                 ], 422);
             }
         }
@@ -141,16 +172,16 @@ class AppointmentController extends Controller
         $appointment->update($validated);
 
         if (isset($validated['status'])) {
-            if ($validated['status'] === 'confirmed') {
-                $appointment->update(['confirmed_at' => now()]);
-            } elseif ($validated['status'] === 'cancelled') {
-                $appointment->update(['cancelled_at' => now()]);
-            }
+            match($validated['status']) {
+                'confirmed' => $appointment->confirm(),
+                'cancelled' => $appointment->cancel($validated['cancellation_reason'] ?? 'Annulé via API'),
+                default => null,
+            };
         }
 
         return response()->json([
-            'message' => 'Rendez-vous mis a jour.',
-            'data' => $appointment->fresh(['patient', 'doctor', 'service']),
+            'message' => 'Rendez-vous mis à jour.',
+            'data'    => $appointment->fresh(['patient', 'doctor', 'service']),
         ]);
     }
 
@@ -158,12 +189,20 @@ class AppointmentController extends Controller
      * DELETE /api/appointments/{id}
      * Annuler un rendez-vous
      */
-    public function destroy(Appointment $appointment)
+    public function destroy(Request $request, Appointment $appointment)
     {
-        $appointment->cancel('Annule via API');
+        $user = $request->user();
+
+        // SÉCURITÉ
+        if (!$user->isAdmin() && $appointment->patient_id !== $user->id) {
+            return response()->json(['message' => 'Accès non autorisé.'], 403);
+        }
+
+        $appointment->cancel('Annulé via API');
+        $appointment->delete(); // Supprimer mn la base de données bhal f l'web
 
         return response()->json([
-            'message' => 'Rendez-vous annule avec succes.',
+            'message' => 'Rendez-vous annulé et supprimé avec succès.',
         ]);
     }
 }

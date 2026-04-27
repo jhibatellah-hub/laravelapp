@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
@@ -24,7 +25,9 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
-            return redirect()->intended(route('dashboard'));
+            $request->session()->put('locale', Auth::user()->locale ?? 'fr');
+
+            return redirect()->route('dashboard');
         }
 
         return back()->withErrors([
@@ -32,10 +35,14 @@ class AuthController extends Controller
         ])->onlyInput('email');
     }
 
+  
+
     public function showRegister()
     {
         return view('auth.register');
     }
+
+   
 
     public function register(Request $request)
     {
@@ -50,11 +57,13 @@ class AuthController extends Controller
             'name'     => $validated['name'],
             'email'    => $validated['email'],
             'phone'    => $validated['phone'] ?? null,
-            'password' => Hash::make($validated['password']),
+            'password' => $validated['password'], 
             'role'     => 'patient',
+            'locale'   => App::getLocale(),
         ]);
 
         Auth::login($user);
+        $request->session()->put('locale', $user->locale ?? 'fr');
 
         return redirect()->route('dashboard');
     }
