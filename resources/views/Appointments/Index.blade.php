@@ -38,11 +38,21 @@
     showAddModal: false,
     showDeleteModal: false,
     showEditModal: false,
-    showAddPatientModal: false,
-    showAddDoctorModal: false,
+    showAddPatientModal: {{ $errors->addPatient->any() ? 'true' : 'false' }},
+    showAddDoctorModal: {{ $errors->addDoctor->any() ? 'true' : 'false' }},
+    showEditUserModal: {{ $errors->editManagedUser->any() ? 'true' : 'false' }},
     deleteActionUrl: '',
     editActionUrl: '',
     editData: { id: '', appointment_date: '', appointment_time: '', status: 'pending', notes: '' },
+    editUserData: {
+        user_id: {{ old('user_id', 0) }},
+        role: @js(old('role', 'patient')),
+        name: @js(old('name', '')),
+        email: @js(old('email', '')),
+        phone: @js(old('phone', '')),
+        birth_date: @js(old('birth_date', '')),
+        specialty: @js(old('specialty', ''))
+    },
 
     openDelete(id) {
         this.deleteActionUrl = '/appointments/' + id;
@@ -58,6 +68,18 @@
         };
         this.editActionUrl = '/appointments/' + appointment.id;
         this.showEditModal = true;
+    },
+    openManagedUserEdit(user) {
+        this.editUserData = {
+            user_id: user.id,
+            role: user.role,
+            name: user.name ?? '',
+            email: user.email ?? '',
+            phone: user.phone ?? '',
+            birth_date: user.birth_date ?? '',
+            specialty: user.specialty ?? ''
+        };
+        this.showEditUserModal = true;
     }
 }"
 @open-add.window="showAddModal = true"
@@ -153,12 +175,19 @@
                                     <div class="cell-subtitle">{{ $patient->email }}</div>
                                 </div>
                                 <form action="{{ route('admin.users.destroy', $patient) }}" method="POST" onsubmit="return confirm('{{ __('appointments.delete_user_confirm') }}')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="icon-btn" title="{{ __('appointments.delete_patient') }}">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
+    
+    <button type="button" class="icon-btn" title="{{ __('appointments.edit_patient') }}" 
+            @click='openManagedUserEdit({{ json_encode(["id" => $patient->id, "role" => "patient", "name" => $patient->name, "email" => $patient->email, "phone" => $patient->phone, "birth_date" => $patient->birth_date ?->format("Y-m-d")]) }})'>
+        <i class="fas fa-pen"></i>
+    </button>
+    
+    @csrf
+    @method('DELETE')
+    
+    <button type="submit" class="icon-btn" title="{{ __('appointments.delete_patient') }}">
+        <i class="fas fa-trash"></i>
+    </button>
+            </form>
                             </div>
                         @empty
                             <div class="cell-subtitle">{{ __('appointments.no_patients') }}</div>
@@ -180,12 +209,19 @@
                                     <div class="cell-subtitle">{{ $doctor->specialty ?: __('ui.medical_center') }} · {{ $doctor->email }}</div>
                                 </div>
                                 <form action="{{ route('admin.users.destroy', $doctor) }}" method="POST" onsubmit="return confirm('{{ __('appointments.delete_user_confirm') }}')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="icon-btn" title="{{ __('appointments.delete_doctor') }}">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
+    
+    <button type="button" class="icon-btn" title="{{ __('appointments.edit_doctor') }}" 
+            @click='openManagedUserEdit({{ json_encode(["id" => $doctor->id, "role" => "doctor", "name" => $doctor->name, "email" => $doctor->email, "phone" => $doctor->phone, "specialty" => $doctor->specialty]) }})'>
+        <i class="fas fa-pen"></i>
+    </button>
+    
+    @csrf
+    @method('DELETE')
+    
+    <button type="submit" class="icon-btn" title="{{ __('appointments.delete_doctor') }}">
+        <i class="fas fa-trash"></i>
+    </button>
+                </form>
                             </div>
                         @empty
                             <div class="cell-subtitle">{{ __('appointments.no_doctors') }}</div>
@@ -427,21 +463,28 @@
 
                 <form action="{{ route('admin.users.patient.store') }}" method="POST" class="form-grid">
                     @csrf
+                    @if($errors->addPatient->any())
+                        <div class="panel" style="color: var(--danger); padding: 12px;">
+                            @foreach($errors->addPatient->all() as $error)
+                                <div class="cell-subtitle">{{ $error }}</div>
+                            @endforeach
+                        </div>
+                    @endif
                     <div>
                         <label class="field-label">{{ __('appointments.patient') }}</label>
-                        <input type="text" name="name" class="field-control" required>
+                        <input type="text" name="name" class="field-control" value="{{ old('name') }}" required>
                     </div>
                     <div>
                         <label class="field-label">Email</label>
-                        <input type="email" name="email" class="field-control" required>
+                        <input type="email" name="email" class="field-control" value="{{ old('email') }}" required>
                     </div>
                     <div>
                         <label class="field-label">Phone</label>
-                        <input type="text" name="phone" class="field-control">
+                        <input type="text" name="phone" class="field-control" value="{{ old('phone') }}">
                     </div>
                     <div>
                         <label class="field-label">{{ __('appointments.date') }}</label>
-                        <input type="date" name="birth_date" class="field-control">
+                        <input type="date" name="birth_date" class="field-control" value="{{ old('birth_date') }}">
                     </div>
                     <div class="form-grid two">
                         <div>
@@ -472,21 +515,28 @@
 
                 <form action="{{ route('admin.users.doctor.store') }}" method="POST" class="form-grid">
                     @csrf
+                    @if($errors->addDoctor->any())
+                        <div class="panel" style="color: var(--danger); padding: 12px;">
+                            @foreach($errors->addDoctor->all() as $error)
+                                <div class="cell-subtitle">{{ $error }}</div>
+                            @endforeach
+                        </div>
+                    @endif
                     <div>
                         <label class="field-label">{{ __('appointments.doctor') }}</label>
-                        <input type="text" name="name" class="field-control" required>
+                        <input type="text" name="name" class="field-control" value="{{ old('name') }}" required>
                     </div>
                     <div>
                         <label class="field-label">Email</label>
-                        <input type="email" name="email" class="field-control" required>
+                        <input type="email" name="email" class="field-control" value="{{ old('email') }}" required>
                     </div>
                     <div>
                         <label class="field-label">Phone</label>
-                        <input type="text" name="phone" class="field-control">
+                        <input type="text" name="phone" class="field-control" value="{{ old('phone') }}">
                     </div>
                     <div>
                         <label class="field-label">{{ __('appointments.specialty') }}</label>
-                        <input type="text" name="specialty" class="field-control">
+                        <input type="text" name="specialty" class="field-control" value="{{ old('specialty') }}">
                     </div>
                     <div class="form-grid two">
                         <div>
@@ -501,6 +551,67 @@
                     <div class="modal-actions">
                         <button type="button" class="btn btn-secondary" @click="showAddDoctorModal = false">{{ __('appointments.close') }}</button>
                         <button type="submit" class="btn btn-primary">{{ __('appointments.save') }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div x-show="showEditUserModal" x-cloak class="modal-backdrop">
+            <div class="modal-panel" @click.away="showEditUserModal = false">
+                <div class="panel-heading">
+                    <div>
+                        <div class="modal-title">{{ __('appointments.edit_user') }}</div>
+                    </div>
+                    <button type="button" class="icon-btn" @click="showEditUserModal = false"><i class="fas fa-xmark"></i></button>
+                </div>
+
+                <form action="{{ route('admin.users.update') }}" method="POST" class="form-grid">
+                    @csrf
+                    @method('PUT')
+                    <input type="hidden" name="user_id" :value="editUserData.user_id">
+                    <input type="hidden" name="role" :value="editUserData.role">
+
+                    @if($errors->editManagedUser->any())
+                        <div class="panel" style="color: var(--danger); padding: 12px;">
+                            @foreach($errors->editManagedUser->all() as $error)
+                                <div class="cell-subtitle">{{ $error }}</div>
+                            @endforeach
+                        </div>
+                    @endif
+
+                    <div>
+                        <label class="field-label">{{ __('appointments.name') }}</label>
+                        <input type="text" name="name" class="field-control" x-model="editUserData.name" required>
+                    </div>
+                    <div>
+                        <label class="field-label">Email</label>
+                        <input type="email" name="email" class="field-control" x-model="editUserData.email" required>
+                    </div>
+                    <div>
+                        <label class="field-label">Phone</label>
+                        <input type="text" name="phone" class="field-control" x-model="editUserData.phone">
+                    </div>
+                    <div x-show="editUserData.role === 'patient'">
+                        <label class="field-label">{{ __('appointments.date') }}</label>
+                        <input type="date" name="birth_date" class="field-control" x-model="editUserData.birth_date">
+                    </div>
+                    <div x-show="editUserData.role === 'doctor'">
+                        <label class="field-label">{{ __('appointments.specialty') }}</label>
+                        <input type="text" name="specialty" class="field-control" x-model="editUserData.specialty">
+                    </div>
+                    <div class="form-grid two">
+                        <div>
+                            <label class="field-label">{{ __('appointments.new_password') }}</label>
+                            <input type="password" name="password" class="field-control">
+                        </div>
+                        <div>
+                            <label class="field-label">{{ __('appointments.confirm_password') }}</label>
+                            <input type="password" name="password_confirmation" class="field-control">
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" @click="showEditUserModal = false">{{ __('appointments.close') }}</button>
+                        <button type="submit" class="btn btn-primary">{{ __('appointments.update') }}</button>
                     </div>
                 </form>
             </div>

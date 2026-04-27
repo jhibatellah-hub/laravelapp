@@ -77,30 +77,23 @@ class Appointment extends Model
     }
 
    
-    public function scopeConflicting($query, $doctorId, $date, $time, $durationMinutes = 30, $excludeId = null)
+   public function scopeConflicting($query, $doctorId, $date, $time, $durationMinutes = 30, $excludeId = null)
     {
-        $start = Carbon::parse("{$date} {$time}");
-        $end = $start->copy()->addMinutes($durationMinutes);
+        $startBoundary = \Carbon\Carbon::parse($time)->subMinutes($durationMinutes)->format('H:i:s');
+        $endBoundary   = \Carbon\Carbon::parse($time)->addMinutes($durationMinutes)->format('H:i:s');
 
-        $query->where('doctor_id', $doctorId)
-            ->whereDate('appointment_date', $date)
-            ->whereNotIn('status', ['cancelled'])
-            ->where(function ($q) use ($start, $end, $durationMinutes) {
-                // RDV li kaybda men qbel w ma salaach
-                $q->whereRaw("TIME(appointment_time) < ? AND TIME(DATE_ADD(appointment_time, INTERVAL ? MINUTE)) > ?", [
-                    $end->format('H:i:s'),
-                    $durationMinutes,
-                    $start->format('H:i:s'),
-                ]);
-            });
+        $q = $query->where('doctor_id', $doctorId)
+                   ->whereDate('appointment_date', $date)
+                   ->where('status', '!=', 'cancelled')
+                   ->where('appointment_time', '>', $startBoundary)
+                   ->where('appointment_time', '<', $endBoundary);
 
         if ($excludeId) {
-            $query->where('id', '!=', $excludeId);
+            $q->where('id', '!=', $excludeId);
         }
 
-        return $query;
+        return $q;
     }
-
     // --- Accessors ---
     public function getStatusLabelAttribute(): string
     {

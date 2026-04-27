@@ -11,16 +11,6 @@
     </div>
 
     <div class="topbar-right">
-        <button class="icon-btn" type="button" title="Notifications">
-            <i class="fas fa-bell"></i>
-        </button>
-        <button class="icon-btn" type="button" title="Support">
-            <i class="fas fa-question"></i>
-        </button>
-        <button class="icon-btn" type="button" title="Settings">
-            <i class="fas fa-gear"></i>
-        </button>
-
         <div class="locale-pill">
             <i class="fas fa-language" style="color: var(--accent);"></i>
             <a href="{{ route('locale', 'fr') }}" class="locale-link {{ app()->getLocale() === 'fr' ? 'is-active' : '' }}">FR</a>

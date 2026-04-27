@@ -241,7 +241,7 @@ class AppointmentController extends Controller
             abort(403, 'Acces non autorise');
         }
 
-        $validated = $request->validate([
+        $validated = $request->validateWithBag('addPatient', [
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email',
             'phone' => 'nullable|string|max:20',
@@ -269,7 +269,7 @@ class AppointmentController extends Controller
             abort(403, 'Acces non autorise');
         }
 
-        $validated = $request->validate([
+        $validated = $request->validateWithBag('addDoctor', [
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email',
             'phone' => 'nullable|string|max:20',
@@ -310,6 +310,61 @@ class AppointmentController extends Controller
         $user->delete();
 
         return redirect()->route('appointments.index')->with('success', 'Utilisateur supprime avec succes.');
+    }
+
+    public function updateManagedUser(Request $request)
+    {
+        $authUser = Auth::user();
+
+        if (!$authUser->isAdmin()) {
+            abort(403, 'Acces non autorise');
+        }
+
+        $validated = $request->validateWithBag('editManagedUser', [
+            'user_id' => 'required|integer|exists:users,id',
+            'role' => 'required|in:patient,doctor',
+            'name' => 'required|string|max:255',
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')->ignore($request->input('user_id')),
+            ],
+            'phone' => 'nullable|string|max:20',
+            'birth_date' => 'nullable|date|before:today',
+            'specialty' => 'nullable|string|max:255',
+            'password' => 'nullable|string|min:8|confirmed',
+        ]);
+
+        $user = User::findOrFail($validated['user_id']);
+
+        if (!in_array($user->role, ['patient', 'doctor'], true)) {
+            return redirect()->route('appointments.index')->with('error', 'Impossible de modifier cet utilisateur.');
+        }
+
+        if ($user->role !== $validated['role']) {
+            return redirect()->route('appointments.index')->with('error', 'Le role ne correspond pas a l utilisateur.');
+        }
+
+        $payload = [
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'] ?? null,
+        ];
+
+        if ($validated['role'] === 'patient') {
+            $payload['birth_date'] = $validated['birth_date'] ?? null;
+        } else {
+            $payload['specialty'] = $validated['specialty'] ?? null;
+        }
+
+        if (!empty($validated['password'])) {
+            $payload['password'] = Hash::make($validated['password']);
+        }
+
+        $user->update($payload);
+
+        return redirect()->route('appointments.index')->with('success', 'Utilisateur mis a jour avec succes.');
     }
 
     private function checkConflict($doctorId, $date, $time, $durationMinutes = 30, $excludeAppointmentId = null)
