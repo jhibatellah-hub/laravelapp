@@ -3,22 +3,30 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
+    use HasApiTokens, HasFactory, Notifiable;
 
     protected $fillable = [
-        'name', 'email', 'password', 'role', 'phone',
-        'birth_date', 'address', 'specialty', 'avatar',
-        'is_active', 'locale',
+        'name',
+        'email',
+        'password',
+        'role',
+        'phone',
+        'specialty', 
+        'birth_date',
+        'locale', 
+        'is_active',
     ];
 
-    protected $hidden = ['password', 'remember_token'];
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
 
     protected function casts(): array
     {
@@ -27,6 +35,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'birth_date' => 'date',
             'is_active' => 'boolean',
+            'locale' => 'string', // ⬅️ ZEDT
         ];
     }
 
@@ -46,6 +55,7 @@ class User extends Authenticatable
     {
         return $query->where('is_active', true);
     }
+
     public function scopeDoctors($query)
     {
         return $query->where('role', 'doctor');
@@ -75,6 +85,9 @@ class User extends Authenticatable
     public function getInitialsAttribute(): string
     {
         $words = explode(' ', $this->name);
-        return strtoupper(substr($words[0], 0, 1) . (isset($words[1]) ? substr($words[1], 0, 1) : ''));
+        return strtoupper(
+            substr($words[0], 0, 1) . 
+            (isset($words[1]) ? substr($words[1], 0, 1) : '')
+        );
     }
 }

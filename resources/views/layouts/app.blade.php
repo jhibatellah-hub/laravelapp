@@ -271,7 +271,7 @@
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand">
             <div class="brand-icon"><i class="fas fa-notes-medical"></i></div>
-            <div class="brand-name">MedCabinet</div>
+            <div class="brand-name">JamylCabinet</div>
             <div class="brand-sub">{{ __('app.subtitle') }}</div>
         </div>
 

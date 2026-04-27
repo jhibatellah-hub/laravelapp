@@ -8,24 +8,25 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('users', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
-            $table->enum('role', ['admin', 'doctor', 'patient'])->default('patient');
-            $table->string('phone', 20)->nullable();
-            $table->date('birth_date')->nullable();
-            $table->text('address')->nullable();
-            $table->string('specialty')->nullable(); // Pour les médecins
-            $table->string('avatar')->nullable();
-            $table->boolean('is_active')->default(true);
-            $table->string('locale', 5)->default('fr');
-            $table->rememberToken();
-            $table->timestamps();
-            $table->softDeletes();
-        });
+       Schema::create('users', function (Blueprint $table) {
+    $table->id();
+    $table->string('name');
+    $table->string('email')->unique();
+    $table->timestamp('email_verified_at')->nullable();
+    $table->string('password');
+    $table->enum('role', ['admin', 'doctor', 'patient'])->default('patient');
+    $table->string('phone')->nullable();
+    $table->string('specialty')->nullable(); // ⬅️ ZEDT HADI (Doctor only)
+    $table->date('birth_date')->nullable();
+    $table->string('locale', 5)->default('fr'); // ⬅️ ZEDT HADI
+    $table->boolean('is_active')->default(true);
+    $table->rememberToken();
+    $table->timestamps();
+    
+    //INDEXES
+    $table->index('role');
+    $table->index('is_active');
+});
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();
