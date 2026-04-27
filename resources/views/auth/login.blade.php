@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ __('login') }} — MedCabinet</title>
+    <title>{{ __('login') }} — JamylCabinet</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
@@ -75,7 +75,7 @@
 <div class="login-card">
     <div class="brand">
         <div class="brand-icon"><i class="fas fa-notes-medical"></i></div>
-        <div class="brand-name">MedCabinet</div>
+        <div class="brand-name">JamylCabinet</div>
         <div class="brand-sub">{{ __('app.subtitle') }}</div>
     </div>
 
@@ -123,9 +123,9 @@
 
     <div class="demo-info">
         <strong><i class="fas fa-info-circle"></i> {{ __('auth.demo_accounts') }}</strong>
-        <div class="demo-row"><span>Admin</span><span>admin@medcabinet.ma / password</span></div>
-        <div class="demo-row"><span>Médecin</span><span>medecin@medcabinet.ma / password</span></div>
-        <div class="demo-row"><span>Patient</span><span>patient@medcabinet.ma / password</span></div>
+        <div class="demo-row"><span>Admin</span><span>admin@JamylCabinet.ma / password</span></div>
+        <div class="demo-row"><span>Médecin</span><span>medecin@JamylCabinet.ma / password</span></div>
+        <div class="demo-row"><span>Patient</span><span>patient@JamylCabinet.ma / password</span></div>
     </div>
 </div>
 </body>
