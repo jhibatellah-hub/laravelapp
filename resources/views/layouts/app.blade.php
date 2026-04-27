@@ -314,9 +314,9 @@
                 </div>
             </div>
             <div class="lang-switcher">
-                <a href="{{ route('locale', 'fr') }}" class="lang-btn {{ app()->getLocale() === 'fr' ? 'active' : '' }}">FR</a>
-                <a href="{{ route('locale', 'ar') }}" class="lang-btn {{ app()->getLocale() === 'ar' ? 'active' : '' }}">AR</a>
-            </div>
+    <a href="{{ route('locale', 'fr') }}" class="lang-btn {{ app()->getLocale() === 'fr' ? 'active' : '' }}">FR</a>
+    <a href="{{ route('locale', 'en') }}" class="lang-btn {{ app()->getLocale() === 'en' ? 'active' : '' }}">EN</a>
+</div>
             <form method="POST" action="{{ route('logout') }}" style="margin-top:8px">
                 @csrf
                 <button type="submit" class="btn btn-outline btn-sm" style="width:100%; justify-content:center; color:rgba(181,212,244,0.7); background:transparent; border-color:rgba(255,255,255,0.15);">
