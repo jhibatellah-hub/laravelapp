@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\AppointmentController;
+use App\Http\Controllers\Api\AppointmentController;
 use App\Models\Appointment;
 use App\Models\Service;
 use App\Models\User;

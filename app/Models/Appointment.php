@@ -85,7 +85,7 @@ class Appointment extends Model
         $query->where('doctor_id', $doctorId)
             ->whereDate('appointment_date', $date)
             ->whereNotIn('status', ['cancelled'])
-            ->where(function ($q) use ($start, $end) {
+            ->where(function ($q) use ($start, $end, $durationMinutes) {
                 // RDV li kaybda men qbel w ma salaach
                 $q->whereRaw("TIME(appointment_time) < ? AND TIME(DATE_ADD(appointment_time, INTERVAL ? MINUTE)) > ?", [
                     $end->format('H:i:s'),
