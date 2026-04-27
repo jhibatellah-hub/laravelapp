@@ -20,11 +20,17 @@
                 </div>
             </div>
 
+            @php
+                $__clinicLogo = file_exists(public_path('images/clinic-profile-logo.png'))
+                    ? asset('images/clinic-profile-logo.png')
+                    : asset('images/clinic-profile-logo.svg');
+            @endphp
+
             <div class="auth-card single">
                 <div class="auth-panel compact">
                     <div class="auth-brand" style="justify-content: center;">
-                        <div class="auth-brand-icon">
-                            <i class="fas fa-briefcase-medical"></i>
+                        <div class="auth-brand-icon auth-brand-icon--logo">
+                            <img src="{{ $__clinicLogo }}" alt="">
                         </div>
                     </div>
 

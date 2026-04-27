@@ -20,12 +20,17 @@
                 </div>
             </div>
 
+            @php
+                $__clinicLogo = file_exists(public_path('images/clinic-profile-logo.png'))
+                    ? asset('images/clinic-profile-logo.png')
+                    : asset('images/clinic-profile-logo.svg');
+            @endphp
+
             <div class="auth-card split">
                 <div class="auth-showcase">
-                    <div class="showcase-art">
-                        <div class="showcase-stage"></div>
-                        <div class="showcase-plinth"></div>
-                        <div class="showcase-sphere"></div>
+                    <div class="showcase-art showcase-art--clinic">
+                        <div class="showcase-art-pattern" aria-hidden="true"></div>
+                        <img class="showcase-logo" src="{{ $__clinicLogo }}" alt="">
                     </div>
 
                     <div class="showcase-copy">
@@ -36,8 +41,8 @@
 
                 <div class="auth-panel">
                     <div class="auth-brand">
-                        <div class="auth-brand-icon">
-                            <i class="fas fa-shield-heart"></i>
+                        <div class="auth-brand-icon auth-brand-icon--logo">
+                            <img src="{{ $__clinicLogo }}" alt="">
                         </div>
                         <div>
                             <div class="auth-brand-title">Petal Health</div>

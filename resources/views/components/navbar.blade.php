@@ -22,7 +22,9 @@
                 <div class="topbar-user-name">{{ auth()->user()->name }}</div>
                 <div class="topbar-user-role">{{ __('ui.' . auth()->user()->role) }}</div>
             </div>
-            <div class="avatar-circle">{{ auth()->user()->initials }}</div>
+            <div class="avatar-circle avatar-circle--brand">
+                <x-clinic-logo />
+            </div>
         </div>
     </div>
 </header>

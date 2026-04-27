@@ -1,6 +1,8 @@
 <aside class="app-sidebar" :class="sidebarOpen ? 'is-open' : ''">
     <div class="brand-row">
-        <div class="brand-mark"></div>
+        <div class="brand-mark">
+            <x-clinic-logo variant="brand" />
+        </div>
         <div>
             <div class="brand-name">Petal Health</div>
             <div class="brand-meta">{{ __('ui.medical_center') }}</div>
@@ -36,7 +38,9 @@
     <div class="sidebar-spacer"></div>
 
     <div class="sidebar-account">
-        <div class="avatar-circle">{{ auth()->user()->initials }}</div>
+        <div class="avatar-circle avatar-circle--brand">
+            <x-clinic-logo />
+        </div>
         <div>
             <div class="account-name">{{ auth()->user()->name }}</div>
             <div class="account-role">{{ __('ui.' . auth()->user()->role) }}</div>
