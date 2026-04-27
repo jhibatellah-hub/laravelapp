@@ -24,13 +24,26 @@
                 $__clinicLogo = file_exists(public_path('images/clinic-profile-logo.png'))
                     ? asset('images/clinic-profile-logo.png')
                     : asset('images/clinic-profile-logo.svg');
+
+                $__showcaseImage = null;
+                foreach (['login-showcase.webp', 'login-showcase.jpg', 'login-showcase.jpeg', 'login-showcase.png'] as $__showcaseFile) {
+                    if (file_exists(public_path('images/'.$__showcaseFile))) {
+                        $__showcaseImage = asset('images/'.$__showcaseFile);
+                        break;
+                    }
+                }
+                if ($__showcaseImage === null) {
+                    $__showcaseImage = asset('images/login-showcase.svg');
+                }
             @endphp
 
             <div class="auth-card split">
                 <div class="auth-showcase">
                     <div class="showcase-art showcase-art--clinic">
                         <div class="showcase-art-pattern" aria-hidden="true"></div>
-                        <img class="showcase-logo" src="{{ $__clinicLogo }}" alt="">
+                        <div class="showcase-logo-frame showcase-hero-frame">
+                            <img class="showcase-hero" src="{{ $__showcaseImage }}" alt="">
+                        </div>
                     </div>
 
                     <div class="showcase-copy">

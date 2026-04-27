@@ -14,4 +14,6 @@ return [
     'medical_center' => 'Centre medical',
     'support' => 'Besoin d aide technique ?',
     'contact_admin' => 'Contacter le support',
+    'mailing' => 'Mailing',
+    'mail_subject' => 'Petal Health — message depuis l\'application',
 ];

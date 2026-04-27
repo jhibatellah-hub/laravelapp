@@ -28,7 +28,7 @@ return [
     'remember' => 'Remember me',
     'phone' => 'Phone number',
     'phone_placeholder' => '+212 6 00 00 00 00',
-    'showcase_title' => 'Empathetic care management',
-    'showcase_text' => 'Streamline your daily practice with tools designed to reduce cognitive load and prioritize patient connection.',
+    'showcase_title' => 'Practice management, refined',
+    'showcase_text' => 'Bring scheduling, patient records, and team coordination together in one secure workspace built for clinics and medical centres.',
     'logout' => 'Sign out',
 ];

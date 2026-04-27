@@ -2,7 +2,7 @@
 
 return [
     'welcome_back' => 'Bon retour',
-    'login_subtitle' => 'Saisissez vos identifiants pour acceder a votre espace.',
+    'login_subtitle' => 'Saisissez vos identifiants pour accéder à votre espace.',
     'email' => 'Adresse e-mail',
     'password' => 'Mot de passe',
     'forgot' => 'Mot de passe oublie ?',
@@ -28,7 +28,7 @@ return [
     'remember' => 'Se souvenir de moi',
     'phone' => 'Numero de telephone',
     'phone_placeholder' => '+212 6 00 00 00 00',
-    'showcase_title' => 'Une gestion douce et moderne',
-    'showcase_text' => 'Fluidifiez votre pratique avec des outils concus pour reduire la charge mentale et renforcer la relation patient.',
+    'showcase_title' => 'Pilotage de cabinet, interface sobre',
+    'showcase_text' => 'Centralisez l’agenda, les dossiers patients et la coordination d’équipe sur une plateforme conçue pour les établissements de santé.',
     'logout' => 'Se deconnecter',
 ];

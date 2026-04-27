@@ -14,4 +14,6 @@ return [
     'medical_center' => 'Medical center',
     'support' => 'Need technical support?',
     'contact_admin' => 'Contact support',
+    'mailing' => 'Mailing',
+    'mail_subject' => 'Petal Health — message from the app',
 ];
