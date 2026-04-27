@@ -11,8 +11,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
-// Ila mazal masawbtich l'mail, ghanhbtouha f try catch bla matdir l'erreur
-
 class AppointmentController extends Controller
 {
     public function index(Request $request)
@@ -23,14 +21,12 @@ class AppointmentController extends Controller
             ->orderBy('appointment_date', 'desc')
             ->orderBy('appointment_time', 'desc');
 
-        // Filtres rôle
         if ($user->isPatient()) {
             $query->forPatient($user->id);
         } elseif ($user->isDoctor()) {
             $query->forDoctor($user->id);
         }
 
-        // Filtres requête (Recherche normale)
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
@@ -44,7 +40,7 @@ class AppointmentController extends Controller
         $appointments = $query->paginate(15)->withQueryString();
         $doctors = User::doctors()->active()->get();
         $services = Service::active()->get();
-        $patients = User::patients()->active()->get(); // Zdnaha bach n3mro biha select dyal l'admin
+        $patients = User::patients()->active()->get(); 
 
         $stats = $this->getStatsForUser($user);
 
@@ -123,7 +119,6 @@ class AppointmentController extends Controller
 
         $appointment = Appointment::create($validated);
 
-        // Envoyer email (Mkhbya f try/catch bach ila makanch l'email msawb matehbesh l'app)
         $this->sendConfirmationEmail($appointment);
 
         return redirect()->route('appointments.index')
@@ -168,19 +163,17 @@ class AppointmentController extends Controller
 
     public function destroy(Appointment $appointment)
     {
-        // 7iydna l'policy lmo3aqda w darna check normal
         if (!Auth::user()->isAdmin() && Auth::id() !== $appointment->patient_id) {
             abort(403, 'Accès non autorisé');
         }
 
         $appointment->cancel('Annulé par l\'utilisateur');
-        $appointment->delete(); // Supprimer de la base de données
+        $appointment->delete(); 
 
         return redirect()->route('appointments.index')
             ->with('success', 'Rendez-vous supprimé avec succès.');
     }
 
-    // Fonction khassa b Axios (Recherche asynchrone)
     public function search(Request $request)
     {
         $query = Appointment::with(['patient', 'doctor', 'service']);
@@ -374,7 +367,6 @@ class AppointmentController extends Controller
 
     private function sendConfirmationEmail(Appointment $appointment): void
     {
-        // Kan checkiw wesh l'email khddam bla matcrash l'app
         try {
             if (class_exists(\App\Mail\AppointmentConfirmation::class)) {
                 Mail::to($appointment->patient->email)->send(new \App\Mail\AppointmentConfirmation($appointment));

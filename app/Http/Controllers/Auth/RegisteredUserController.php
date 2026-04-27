@@ -26,8 +26,8 @@ class RegisteredUserController extends Controller
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'password' => $request->password, // Laravel 11 ghaliban gha y-hashih bohdo kima darna f Model
-            'role' => 'patient', // Ay wahed t-sjel bohdo gha ykon Patient
+            'password' => $request->password, 
+            'role' => 'patient', 
         ]);
 
         Auth::login($user);

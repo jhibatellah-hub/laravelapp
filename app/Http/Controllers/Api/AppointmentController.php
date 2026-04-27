@@ -17,11 +17,11 @@ class AppointmentController extends Controller
      */
     public function index(Request $request)
     {
-        $user = $request->user(); // Njibou l'user li m-connecté f l'API (Sanctum)
+        $user = $request->user(); 
         
         $query = Appointment::with(['patient:id,name,email,phone', 'doctor:id,name,specialty', 'service']);
 
-        //  SÉCURITÉ DES RÔLES : Kol wahed kixof ghir dyalo
+        
         if ($user->isPatient()) {
             $query->forPatient($user->id);
         } elseif ($user->isDoctor()) {
@@ -34,7 +34,7 @@ class AppointmentController extends Controller
         if ($request->filled('date')) {
             $query->whereDate('appointment_date', $request->date);
         }
-        // L'Admin w tbib homa li yqadrou y-filtriw b patient_id
+        // L'Admin w tbib homa li yqadrou yfiltriw b patient_id
         if ($request->filled('patient_id') && !$user->isPatient()) {
             $query->where('patient_id', $request->patient_id);
         }
@@ -72,14 +72,12 @@ class AppointmentController extends Controller
             'notes'            => 'nullable|string|max:500',
         ]);
 
-        // Forcer l'ID dyal l'Patient bach may-reserverch b smyat chi wahed akhor
         if ($user->isPatient()) {
             $validated['patient_id'] = $user->id;
         }
 
         $service = Service::find($validated['service_id']);
         
-        // Kheddemna scope `conflicting` li f l'Model w 7sebna l'weqt dyal l'service
         $conflict = Appointment::conflicting(
             $validated['doctor_id'], 
             $validated['appointment_date'], 
@@ -112,14 +110,12 @@ class AppointmentController extends Controller
     }
 
     /**
-     * GET /api/appointments/{id}
      * Detail d'un rendez-vous
      */
     public function show(Request $request, Appointment $appointment)
     {
         $user = $request->user();
 
-        // SÉCURITÉ : L'patient yqder yshouf ghir RDV dyalo
         if ($user->isPatient() && $appointment->patient_id !== $user->id) {
             return response()->json(['message' => 'Accès non autorisé.'], 403);
         }
@@ -130,7 +126,6 @@ class AppointmentController extends Controller
     }
 
     /**
-     * PUT /api/appointments/{id}
      * Modifier un rendez-vous
      */
     public function update(Request $request, Appointment $appointment)
@@ -186,7 +181,6 @@ class AppointmentController extends Controller
     }
 
     /**
-     * DELETE /api/appointments/{id}
      * Annuler un rendez-vous
      */
     public function destroy(Request $request, Appointment $appointment)
@@ -199,7 +193,7 @@ class AppointmentController extends Controller
         }
 
         $appointment->cancel('Annulé via API');
-        $appointment->delete(); // Supprimer mn la base de données bhal f l'web
+        $appointment->delete();
 
         return response()->json([
             'message' => 'Rendez-vous annulé et supprimé avec succès.',
