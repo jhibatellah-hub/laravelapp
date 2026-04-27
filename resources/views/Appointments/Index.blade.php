@@ -8,7 +8,17 @@
         <i class="far fa-calendar"></i>
         {{ __('ui.today') }}
     </a>
-    <button type="button" @click="showAddModal = true" class="btn btn-primary">
+    @if(auth()->user()->isAdmin())
+        <button type="button" onclick='window.dispatchEvent(new CustomEvent("open-add-patient"))' class="btn btn-secondary">
+            <i class="fas fa-user-plus"></i>
+            {{ __('appointments.add_patient') }}
+        </button>
+        <button type="button" onclick='window.dispatchEvent(new CustomEvent("open-add-doctor"))' class="btn btn-secondary">
+            <i class="fas fa-user-doctor"></i>
+            {{ __('appointments.add_doctor') }}
+        </button>
+    @endif
+    <button type="button" onclick='window.dispatchEvent(new CustomEvent("open-add"))' class="btn btn-primary">
         <i class="fas fa-plus"></i>
         {{ __('appointments.book') }}
     </button>
@@ -28,6 +38,8 @@
     showAddModal: false,
     showDeleteModal: false,
     showEditModal: false,
+    showAddPatientModal: false,
+    showAddDoctorModal: false,
     deleteActionUrl: '',
     editActionUrl: '',
     editData: { id: '', appointment_date: '', appointment_time: '', status: 'pending', notes: '' },
@@ -48,6 +60,9 @@
         this.showEditModal = true;
     }
 }"
+@open-add.window="showAddModal = true"
+@open-add-patient.window="showAddPatientModal = true"
+@open-add-doctor.window="showAddDoctorModal = true"
 @open-delete.window="openDelete($event.detail)"
 @open-edit.window="openEdit($event.detail)">
     <div class="appointments-layout">
@@ -122,6 +137,62 @@
                     <button type="submit" class="btn btn-secondary" style="width: 100%;">{{ __('appointments.confirm') }}</button>
                 </form>
             </div>
+
+            @if(auth()->user()->isAdmin())
+                <div class="panel">
+                    <div class="panel-heading" style="margin-bottom: 10px;">
+                        <div>
+                            <div class="panel-title">{{ __('appointments.manage_patients') }}</div>
+                        </div>
+                    </div>
+                    <div class="mini-feed">
+                        @forelse($patients as $patient)
+                            <div class="mini-feed-item">
+                                <div style="flex: 1;">
+                                    <div class="cell-title">{{ $patient->name }}</div>
+                                    <div class="cell-subtitle">{{ $patient->email }}</div>
+                                </div>
+                                <form action="{{ route('admin.users.destroy', $patient) }}" method="POST" onsubmit="return confirm('{{ __('appointments.delete_user_confirm') }}')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="icon-btn" title="{{ __('appointments.delete_patient') }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        @empty
+                            <div class="cell-subtitle">{{ __('appointments.no_patients') }}</div>
+                        @endforelse
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-heading" style="margin-bottom: 10px;">
+                        <div>
+                            <div class="panel-title">{{ __('appointments.manage_doctors') }}</div>
+                        </div>
+                    </div>
+                    <div class="mini-feed">
+                        @forelse($doctors as $doctor)
+                            <div class="mini-feed-item">
+                                <div style="flex: 1;">
+                                    <div class="cell-title">{{ $doctor->name }}</div>
+                                    <div class="cell-subtitle">{{ $doctor->specialty ?: __('ui.medical_center') }} · {{ $doctor->email }}</div>
+                                </div>
+                                <form action="{{ route('admin.users.destroy', $doctor) }}" method="POST" onsubmit="return confirm('{{ __('appointments.delete_user_confirm') }}')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="icon-btn" title="{{ __('appointments.delete_doctor') }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        @empty
+                            <div class="cell-subtitle">{{ __('appointments.no_doctors') }}</div>
+                        @endforelse
+                    </div>
+                </div>
+            @endif
         </div>
 
         <div class="panel">
@@ -343,6 +414,98 @@
             </div>
         </div>
     </div>
+
+    @if(auth()->user()->isAdmin())
+        <div x-show="showAddPatientModal" x-cloak class="modal-backdrop">
+            <div class="modal-panel" @click.away="showAddPatientModal = false">
+                <div class="panel-heading">
+                    <div>
+                        <div class="modal-title">{{ __('appointments.add_patient') }}</div>
+                    </div>
+                    <button type="button" class="icon-btn" @click="showAddPatientModal = false"><i class="fas fa-xmark"></i></button>
+                </div>
+
+                <form action="{{ route('admin.users.patient.store') }}" method="POST" class="form-grid">
+                    @csrf
+                    <div>
+                        <label class="field-label">{{ __('appointments.patient') }}</label>
+                        <input type="text" name="name" class="field-control" required>
+                    </div>
+                    <div>
+                        <label class="field-label">Email</label>
+                        <input type="email" name="email" class="field-control" required>
+                    </div>
+                    <div>
+                        <label class="field-label">Phone</label>
+                        <input type="text" name="phone" class="field-control">
+                    </div>
+                    <div>
+                        <label class="field-label">{{ __('appointments.date') }}</label>
+                        <input type="date" name="birth_date" class="field-control">
+                    </div>
+                    <div class="form-grid two">
+                        <div>
+                            <label class="field-label">Password</label>
+                            <input type="password" name="password" class="field-control" required>
+                        </div>
+                        <div>
+                            <label class="field-label">Confirm password</label>
+                            <input type="password" name="password_confirmation" class="field-control" required>
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" @click="showAddPatientModal = false">{{ __('appointments.close') }}</button>
+                        <button type="submit" class="btn btn-primary">{{ __('appointments.save') }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div x-show="showAddDoctorModal" x-cloak class="modal-backdrop">
+            <div class="modal-panel" @click.away="showAddDoctorModal = false">
+                <div class="panel-heading">
+                    <div>
+                        <div class="modal-title">{{ __('appointments.add_doctor') }}</div>
+                    </div>
+                    <button type="button" class="icon-btn" @click="showAddDoctorModal = false"><i class="fas fa-xmark"></i></button>
+                </div>
+
+                <form action="{{ route('admin.users.doctor.store') }}" method="POST" class="form-grid">
+                    @csrf
+                    <div>
+                        <label class="field-label">{{ __('appointments.doctor') }}</label>
+                        <input type="text" name="name" class="field-control" required>
+                    </div>
+                    <div>
+                        <label class="field-label">Email</label>
+                        <input type="email" name="email" class="field-control" required>
+                    </div>
+                    <div>
+                        <label class="field-label">Phone</label>
+                        <input type="text" name="phone" class="field-control">
+                    </div>
+                    <div>
+                        <label class="field-label">{{ __('appointments.specialty') }}</label>
+                        <input type="text" name="specialty" class="field-control">
+                    </div>
+                    <div class="form-grid two">
+                        <div>
+                            <label class="field-label">Password</label>
+                            <input type="password" name="password" class="field-control" required>
+                        </div>
+                        <div>
+                            <label class="field-label">Confirm password</label>
+                            <input type="password" name="password_confirmation" class="field-control" required>
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" @click="showAddDoctorModal = false">{{ __('appointments.close') }}</button>
+                        <button type="submit" class="btn btn-primary">{{ __('appointments.save') }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    @endif
 </div>
 
 @push('scripts')

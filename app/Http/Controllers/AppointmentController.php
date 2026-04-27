@@ -7,8 +7,10 @@ use App\Models\Service;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 // Ila mazal masawbtich l'mail, ghanhbtouha f try catch bla matdir l'erreur
 
 class AppointmentController extends Controller
@@ -231,6 +233,83 @@ class AppointmentController extends Controller
             });
 
         return response()->json($appointments);
+    }
+
+    public function storePatient(Request $request)
+    {
+        if (!Auth::user()->isAdmin()) {
+            abort(403, 'Acces non autorise');
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255|unique:users,email',
+            'phone' => 'nullable|string|max:20',
+            'birth_date' => 'nullable|date|before:today',
+            'password' => ['required', 'confirmed', Password::defaults()],
+        ]);
+
+        User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'] ?? null,
+            'birth_date' => $validated['birth_date'] ?? null,
+            'password' => Hash::make($validated['password']),
+            'role' => 'patient',
+            'locale' => app()->getLocale(),
+            'is_active' => true,
+        ]);
+
+        return redirect()->route('appointments.index')->with('success', 'Patient ajoute avec succes.');
+    }
+
+    public function storeDoctor(Request $request)
+    {
+        if (!Auth::user()->isAdmin()) {
+            abort(403, 'Acces non autorise');
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255|unique:users,email',
+            'phone' => 'nullable|string|max:20',
+            'specialty' => 'nullable|string|max:255',
+            'password' => ['required', 'confirmed', Password::defaults()],
+        ]);
+
+        User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'] ?? null,
+            'specialty' => $validated['specialty'] ?? null,
+            'password' => Hash::make($validated['password']),
+            'role' => 'doctor',
+            'locale' => app()->getLocale(),
+            'is_active' => true,
+        ]);
+
+        return redirect()->route('appointments.index')->with('success', 'Medecin ajoute avec succes.');
+    }
+
+    public function destroyManagedUser(User $user)
+    {
+        $authUser = Auth::user();
+
+        if (!$authUser->isAdmin()) {
+            abort(403, 'Acces non autorise');
+        }
+
+        if (!in_array($user->role, ['patient', 'doctor'], true)) {
+            return redirect()->route('appointments.index')->with('error', 'Impossible de supprimer cet utilisateur.');
+        }
+
+        if ($authUser->id === $user->id) {
+            return redirect()->route('appointments.index')->with('error', 'Vous ne pouvez pas supprimer votre propre compte.');
+        }
+
+        $user->delete();
+
+        return redirect()->route('appointments.index')->with('success', 'Utilisateur supprime avec succes.');
     }
 
     private function checkConflict($doctorId, $date, $time, $durationMinutes = 30, $excludeAppointmentId = null)

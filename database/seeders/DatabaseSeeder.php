@@ -46,7 +46,7 @@ class DatabaseSeeder extends Seeder
         $doctorUsers = [];
         foreach ($doctors as $d) {
             $doctorUsers[] = User::create(array_merge($d, [
-                'password' => Hash::make('Doctor@2024!Secure'),
+                'password' => Hash::make('Doctor@2024'),
                 'role' => 'doctor',
                 'is_active' => true,
             ]));
@@ -123,8 +123,8 @@ class DatabaseSeeder extends Seeder
         }
 
         $this->command->info(' Base de données initialisée avec succès !');
-        $this->command->info(' Admin : admin@medcabinet.ma / Admin@2024!Secure');
-        $this->command->info(' Médecin : medecin@medcabinet.ma / Doctor@2024!Secure');
+        $this->command->info(' Admin : admin@medcabinet.ma / Admin@2024');
+        $this->command->info(' Médecin : medecin@medcabinet.ma / Doctor@2024');
         $this->command->info(' Patient : patient@medcabinet.ma / Patient@2024!Secure');
     }
 }
