@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:sanctum')->group(function () {
     
-    // Rendez-vous CRUD
     Route::apiResource('appointments', AppointmentController::class)->names([
         'index' => 'api.appointments.index',
         'store' => 'api.appointments.store',
@@ -18,7 +17,6 @@ Route::middleware('auth:sanctum')->group(function () {
         'destroy' => 'api.appointments.destroy',
     ]);
     
-    // Patients
     Route::get('/patients', function () {
         return response()->json(
             User::patients()->active()->get(['id', 'name', 'email', 'phone'])
@@ -37,12 +35,10 @@ Route::middleware('auth:sanctum')->group(function () {
         );
     });
 
-    // Services
     Route::get('/services', function () {
         return response()->json(Service::active()->get());
     });
 
-    // Utilisateur connecté
     Route::get('/user', function (Request $request) {
         return response()->json($request->user());
     });

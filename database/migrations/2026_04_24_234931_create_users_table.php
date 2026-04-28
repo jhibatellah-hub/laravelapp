@@ -23,7 +23,6 @@ return new class extends Migration
     $table->rememberToken();
     $table->timestamps();
     
-    //INDEXES
     $table->index('role');
     $table->index('is_active');
 });

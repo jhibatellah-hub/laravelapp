@@ -15,7 +15,7 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->integer('duration_minutes')->default(30);
             $table->decimal('price', 8, 2)->nullable();
-            $table->string('color', 7)->default('#185FA5'); // Couleur badge
+            $table->string('color', 7)->default('#185FA5'); 
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });

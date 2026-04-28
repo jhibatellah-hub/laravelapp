@@ -14,12 +14,12 @@ class DatabaseSeeder extends Seeder
     {
         // Services
         $services = [
-            ['name' => 'Consultation générale', 'name_ar' => 'الاستشارة العامة', 'duration_minutes' => 30, 'price' => 150, 'color' => '#185FA5'],
-            ['name' => 'Cardiologie', 'name_ar' => 'أمراض القلب', 'duration_minutes' => 45, 'price' => 350, 'color' => '#A32D2D'],
-            ['name' => 'Pédiatrie', 'name_ar' => 'طب الأطفال', 'duration_minutes' => 30, 'price' => 200, 'color' => '#3B6D11'],
-            ['name' => 'Radiologie', 'name_ar' => 'الأشعة', 'duration_minutes' => 60, 'price' => 400, 'color' => '#534AB7'],
-            ['name' => 'Dermatologie', 'name_ar' => 'الجلدية', 'duration_minutes' => 30, 'price' => 250, 'color' => '#0F6E56'],
-            ['name' => 'Ophtalmologie', 'name_ar' => 'طب العيون', 'duration_minutes' => 30, 'price' => 300, 'color' => '#854F0B'],
+            ['name' => 'Consultation générale',  'duration_minutes' => 30, 'price' => 150, 'color' => '#185FA5'],
+            ['name' => 'Cardiologie', 'duration_minutes' => 45, 'price' => 350, 'color' => '#A32D2D'],
+            ['name' => 'Pédiatrie',  'duration_minutes' => 30, 'price' => 200, 'color' => '#3B6D11'],
+            ['name' => 'Radiologie', 'duration_minutes' => 60, 'price' => 400, 'color' => '#534AB7'],
+            ['name' => 'Dermatologie', , 'duration_minutes' => 30, 'price' => 250, 'color' => '#0F6E56'],
+            ['name' => 'Ophtalmologie', , 'duration_minutes' => 30, 'price' => 300, 'color' => '#854F0B'],
         ];
 
         foreach ($services as $s) {

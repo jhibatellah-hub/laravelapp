@@ -18,10 +18,10 @@
         <p>Nous vous confirmons que votre rendez-vous a bien été enregistré dans notre système. Voici les détails :</p>
         
         <div class="details">
-            <p>📅 <strong>Date :</strong> {{ $appointment->appointment_date->format('d/m/Y') }}</p>
-            <p>⏰ <strong>Heure :</strong> {{ $appointment->appointment_time }}</p>
-            <p>🩺 <strong>Service :</strong> {{ $appointment->service->name }}</p>
-            <p>👨‍⚕️ <strong>Médecin :</strong> {{ $appointment->doctor->name }}</p>
+            <p><strong>Date :</strong> {{ $appointment->appointment_date->format('d/m/Y') }}</p>
+            <p> <strong>Heure :</strong> {{ $appointment->appointment_time }}</p>
+            <p><strong>Service :</strong> {{ $appointment->service->name }}</p>
+            <p><strong>Médecin :</strong> {{ $appointment->doctor->name }}</p>
         </div>
 
         <p>Si vous souhaitez annuler ou modifier ce rendez-vous, veuillez vous connecter à votre espace patient ou nous contacter directement.</p>

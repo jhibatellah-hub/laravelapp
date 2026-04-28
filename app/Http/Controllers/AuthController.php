@@ -35,7 +35,36 @@ class AuthController extends Controller
         ])->onlyInput('email');
     }
 
-  
+    public function showRegister()
+    {
+        return view('auth.register');
+    }
+
+    public function register(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email',
+            'phone' => 'nullable|string|max:20',
+            'password' => ['required', 'confirmed', Password::defaults()],
+        ]);
+
+        $user = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'] ?? null,
+            'password' => $validated['password'],
+            'role' => 'patient',
+            'locale' => App::getLocale(),
+        ]);
+
+        Auth::login($user);
+        $request->session()->regenerate();
+        $request->session()->put('locale', $user->locale ?? 'fr');
+
+        return redirect()->route('dashboard');
+    }
+
     public function logout(Request $request)
     {
         Auth::logout();
